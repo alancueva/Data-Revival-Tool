@@ -1,0 +1,36 @@
+# Compilados de C++
+*.exe
+*.obj
+*.o
+*.out
+*.dll
+*.lib
+*.so
+*.a
+
+# Archivos de depuración
+*.pdb
+*.idb
+
+# Archivos temporales
+*.tmp
+*.log
+
+# Archivos de proyecto
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Carpetas de compilación
+build/
+bin/
+dist/
+Debug/
+Release/
