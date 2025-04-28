@@ -3,6 +3,7 @@
 #include <string>
 #include "../../include/metadata/FileMetadata.h"
 #include "../../include/metadata/MetadataFactory.h"
+using namespace std;
 
 class MetadataRecoveryEngine
 {
@@ -50,12 +51,16 @@ public:
         return fileAnalyzer->recoverOverwrittenMetadata();
     }
 
+
+    /**
+     * Realiza un análisis profundo del archivo cargado, extrayendo metadatos y analizando su historial de modificaciones.
+     * 
+     */
     std::string performDeepScan()
     {
         if (!fileLoaded)
             return "Ningún archivo cargado";
 
-        // Simulación de un escaneo profundo
         std::string report = "== ANÁLISIS PROFUNDO ==\n\n";
         report += "Archivo: " + fileAnalyzer->getFilePath() + "\n";
         report += "Tipo: " + fileAnalyzer->getFileType() + "\n\n";
@@ -66,14 +71,15 @@ public:
         report += "Metadatos recuperados:\n";
         report += fileAnalyzer->recoverOverwrittenMetadata() + "\n\n";
 
-        report += "Análisis forense:\n";
-        report += "- Sectores analizados: 245\n";
-        report += "- Bloques con metadatos residuales: 17\n";
-        report += "- Historial de modificaciones detectado\n";
-        report += "- Secuencias de bytes recuperadas: 3.4 KB\n\n";
 
-        report += "Este archivo ha sido modificado aproximadamente 8 veces desde su creación.\n";
-        report += "Se han detectado 3 herramientas diferentes usadas en su edición.\n";
+        report += "Análisis forense:\n";
+        report += "- Sectores analizados: " + std::to_string(fileAnalyzer->getAnalyzedSectors()) + "\n";
+        report += "- Bloques con metadatos residuales: " + std::to_string((fileAnalyzer->getResidualMetadataBlocks())) + "\n";
+        report += "- Historial de modificaciones detectado: " + std::to_string(fileAnalyzer->hasModificationHistory()) + "\n";
+        report += "- Secuencias de bytes recuperadas: " + fileAnalyzer->getRecoveredBytesSize() + "\n\n";
+
+        report += "Este archivo ha sido modificado aproximadamente " + std::to_string(fileAnalyzer->getModificationCount()) + " veces desde su creación.\n";
+        report += "Se han detectado " + std::to_string(fileAnalyzer->getEditingToolsCount()) +" herramientas diferentes usadas en su edición.\n";
 
         return report;
     }
