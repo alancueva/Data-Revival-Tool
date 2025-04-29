@@ -73,13 +73,13 @@ public:
 
 
         report += "Análisis forense:\n";
-        report += "- Sectores analizados: " + std::to_string(fileAnalyzer->getAnalyzedSectors()) + "\n";
-        report += "- Bloques con metadatos residuales: " + std::to_string((fileAnalyzer->getResidualMetadataBlocks())) + "\n";
-        report += "- Historial de modificaciones detectado: " + std::to_string(fileAnalyzer->hasModificationHistory()) + "\n";
-        report += "- Secuencias de bytes recuperadas: " + fileAnalyzer->getRecoveredBytesSize() + "\n\n";
+        // report += "- Sectores analizados: " + std::to_string(fileAnalyzer->getAnalyzedSectors()) + "\n";
+        // report += "- Bloques con metadatos residuales: " + std::to_string((fileAnalyzer->getResidualMetadataBlocks())) + "\n";
+        // report += "- Historial de modificaciones detectado: " + std::to_string(fileAnalyzer->hasModificationHistory()) + "\n";
+        // report += "- Secuencias de bytes recuperadas: " + fileAnalyzer->getRecoveredBytesSize() + "\n\n";
 
-        report += "Este archivo ha sido modificado aproximadamente " + std::to_string(fileAnalyzer->getModificationCount()) + " veces desde su creación.\n";
-        report += "Se han detectado " + std::to_string(fileAnalyzer->getEditingToolsCount()) +" herramientas diferentes usadas en su edición.\n";
+        // report += "Este archivo ha sido modificado aproximadamente " + std::to_string(fileAnalyzer->getModificationCount()) + " veces desde su creación.\n";
+        // report += "Se han detectado " + std::to_string(fileAnalyzer->getEditingToolsCount()) +" herramientas diferentes usadas en su edición.\n";
 
         return report;
     }

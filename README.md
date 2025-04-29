@@ -16,6 +16,8 @@ Para compilar y ejecutar aplicaciones C++ con GTK3 en Windows, sigue estos pasos
    pacman -S mingw-w64-x86_64-gtk3
    pacman -S pkg-config
    pacman -S mingw-w64-x86_64-gcc
+
+   pacman -S mingw-w64-x86_64-cmake
    ```
 
 Esto instalará las bibliotecas necesarias para desarrollar aplicaciones gráficas en C++ usando GTK3 y la herramienta `pkg-config` en el entorno MSYS2.
