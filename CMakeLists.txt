@@ -7,21 +7,22 @@ pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 # Añadir directorios de cabeceras
 include_directories(
     ${GTK3_INCLUDE_DIRS}
-    include               # Añade tu carpeta de headers
+    include           
 )
 
 add_definitions(${GTK3_CFLAGS_OTHER})
 
-# Recopila todos los .cpp (puedes hacerlo manual o automático)
+# Recopila todos los .cpp
 set(SOURCES
     src/main.cpp
-    # src/metadata/FileMetadata.cpp
-    # src/metadata/ImageMetadata.cpp
-    # src/metadata/DocumentMetadata.cpp
-    # src/metadata/MetadataFactory.cpp
+    src/metadata/AudioMetadata.cpp
+    src/metadata/DocumentMetadata.cpp
+    src/metadata/FileMetadata.cpp
+    src/metadata/ImageMetadata.cpp
+    src/metadata/MetadataFactory.cpp
     src/core/MetadataRecoveryEngine.cpp
+    # src/core/MetadataRecovery.cpp
     src/ui/MetadataRecoveryGUI.cpp
-    # src/ui/UIHelpers.cpp
 )
 
 
