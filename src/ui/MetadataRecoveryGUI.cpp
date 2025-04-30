@@ -1,23 +1,33 @@
 #include "../../include/ui/MetadataRecoveryGUI.h"
+#include "../../include/core/MetadataRecoveryEngine.h"
 #include <iostream>
 
-MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr)
+MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
+                                             file_entry(nullptr),
+                                             file_button(nullptr),
+                                             file_chooser(nullptr),
+                                             file_label(nullptr),
+                                             file_frame(nullptr),
+                                             file_grid(nullptr),
+                                             scan_combo(nullptr),
+                                             options_grid(nullptr),
+                                             options_frame(nullptr),
+                                             results_vbox(nullptr),
+                                             scroll_window(nullptr),
+                                             file_info_label(nullptr),
+                                             text_view(nullptr),
+                                             progress_bar(nullptr),
+                                             scan_label(nullptr),
+                                             status_label(nullptr),
+                                             engine(new MetadataRecoveryEngine()),
+                                             basic_scan_button(nullptr),
+                                             recover_button(nullptr),
+                                             deep_scan_button(nullptr),
+                                             image_filter(nullptr),
+                                             doc_filter(nullptr),
+                                             all_filter(nullptr),
+                                             zip_filter(nullptr)
 {
-    main_vbox = nullptr;
-    file_frame = nullptr;
-    file_grid = nullptr;
-    file_label = nullptr;
-    file_button = nullptr;
-    scan_combo = nullptr;
-    options_grid = nullptr;
-    options_frame = nullptr;
-    results_vbox = nullptr;
-    scroll_window = nullptr;
-    file_info_label = nullptr;
-    text_view = nullptr;
-    progress_bar = nullptr;
-    scan_label = nullptr;
-    status_label = nullptr;
 }
 
 void MetadataRecoveryGUI::cambiar_icono_ventana()
@@ -34,6 +44,15 @@ void MetadataRecoveryGUI::cambiar_icono_ventana()
     // Liberar memoria
     g_free(icon_path);
     g_free(dir);
+}
+
+void MetadataRecoveryGUI::on_file_button_clicked(GtkWidget *widget, gpointer data)
+{
+    // Cast the data pointer back to our class instance
+    MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
+
+    // Call the instance method
+    gui->on_load_file_clicked();
 }
 
 void MetadataRecoveryGUI::crear()
@@ -73,7 +92,7 @@ void MetadataRecoveryGUI::crear()
     gtk_grid_attach(GTK_GRID(file_grid), file_entry, 1, 0, 1, 1);
 
     file_button = gtk_button_new_with_label("Explorar...");
-    // g_signal_connect(file_button, "clicked", G_CALLBACK(on_load_file_clicked), window);
+    g_signal_connect(file_button, "clicked", G_CALLBACK(on_file_button_clicked), this);
     gtk_grid_attach(GTK_GRID(file_grid), file_button, 2, 0, 1, 1);
 
     // Sección de opciones de análisis
@@ -89,14 +108,13 @@ void MetadataRecoveryGUI::crear()
     scan_label = gtk_label_new("Tipo de Análisis:");
     gtk_grid_attach(GTK_GRID(options_grid), scan_label, 0, 0, 1, 1);
 
-    //ComboBox para seleccionar el tipo de análisis
+    // ComboBox para seleccionar el tipo de análisis
     scan_combo = gtk_combo_box_text_new();
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Rápido");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Estándar");
     gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Profundo");
     gtk_combo_box_set_active(GTK_COMBO_BOX(scan_combo), 1); // Seleccionar "Estándar" por defecto
     gtk_grid_attach(GTK_GRID(options_grid), scan_combo, 1, 0, 2, 1);
-
 
     // Sección de resultados
     results_frame = gtk_frame_new("Resultados");
@@ -112,7 +130,7 @@ void MetadataRecoveryGUI::crear()
 
     // Área de texto con scroll para mostrar resultados
     GtkWidget *scroll_window = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_window),GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_size_request(scroll_window, -1, 300);
     gtk_box_pack_start(GTK_BOX(results_vbox), scroll_window, TRUE, TRUE, 0);
 
@@ -122,7 +140,7 @@ void MetadataRecoveryGUI::crear()
     gtk_container_add(GTK_CONTAINER(scroll_window), text_view);
 
     // Barra de progreso
-    progress_bar = gtk_progress_bar_new(); 
+    progress_bar = gtk_progress_bar_new();
     gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress_bar), "Progreso");
     gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress_bar), TRUE);
     gtk_box_pack_start(GTK_BOX(results_vbox), progress_bar, FALSE, FALSE, 0);
@@ -134,14 +152,14 @@ void MetadataRecoveryGUI::crear()
 
     // Mostrar mensaje de bienvenida
     set_text_view_content(GTK_TEXT_VIEW(text_view),
-                        "Bienvenido al Software de Recuperación de Metadatos\n\n"
-                        "Este programa permite analizar archivos y recuperar metadatos que han sido sobrescritos o eliminados.\n\n"
-                        "Instrucciones:\n"
-                        "1. Haga clic en 'Explorar...' para seleccionar un archivo.\n"
-                        "2. Seleccione el tipo de análisis deseado.\n"
-                        "3. Use los botones para realizar diferentes tipos de escaneo.\n\n"
-                        "Compatible con imágenes (JPG, PNG, TIFF...) y documentos (PDF, DOC, DOCX...).\n\n"
-                        "Software libre y de código abierto (GNU GPL v3).");
+                          "Bienvenido al Software de Recuperación de Metadatos\n\n"
+                          "Este programa permite analizar archivos y recuperar metadatos que han sido sobrescritos o eliminados.\n\n"
+                          "Instrucciones:\n"
+                          "1. Haga clic en 'Explorar...' para seleccionar un archivo.\n"
+                          "2. Seleccione el tipo de análisis deseado.\n"
+                          "3. Use los botones para realizar diferentes tipos de escaneo.\n\n"
+                          "Compatible con imágenes (JPG, PNG, TIFF...) y documentos (PDF, DOC, DOCX...).\n\n"
+                          "Software libre y de código abierto (GNU GPL v3).");
 }
 
 void MetadataRecoveryGUI::mostrar()
@@ -172,9 +190,113 @@ gboolean MetadataRecoveryGUI::on_key_press(GtkWidget *widget, GdkEventKey *event
     return FALSE;
 }
 
-
 void MetadataRecoveryGUI::set_text_view_content(GtkTextView *text_view, const std::string &content)
 {
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
     gtk_text_buffer_set_text(buffer, content.c_str(), -1);
+}
+
+void MetadataRecoveryGUI::on_load_file_clicked()
+{
+
+    file_chooser = gtk_file_chooser_dialog_new("Abrir Archivo",
+                                               GTK_WINDOW(window),
+                                               GTK_FILE_CHOOSER_ACTION_OPEN,
+                                               "_Cancelar", GTK_RESPONSE_CANCEL,
+                                               "_Abrir", GTK_RESPONSE_ACCEPT,
+                                               NULL);
+
+    // Filtros para tipos de archivos
+    image_filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(image_filter, "Imágenes (*.jpg, *.png, *.tiff, *.bmp)");
+    gtk_file_filter_add_pattern(image_filter, "*.jpg");
+    gtk_file_filter_add_pattern(image_filter, "*.jpeg");
+    gtk_file_filter_add_pattern(image_filter, "*.png");
+    gtk_file_filter_add_pattern(image_filter, "*.tiff");
+    gtk_file_filter_add_pattern(image_filter, "*.bmp");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), image_filter);
+
+    doc_filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(doc_filter, "Documentos (*.pdf, *.doc, *.docx)");
+    gtk_file_filter_add_pattern(doc_filter, "*.pdf");
+    gtk_file_filter_add_pattern(doc_filter, "*.doc");
+    gtk_file_filter_add_pattern(doc_filter, "*.docx");
+    gtk_file_filter_add_pattern(doc_filter, "*.xls");
+    gtk_file_filter_add_pattern(doc_filter, "*.xlsx");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), doc_filter);
+
+    all_filter = gtk_file_filter_new();
+    gtk_file_filter_set_name(all_filter, "Todos los archivos (*)");
+    gtk_file_filter_add_pattern(all_filter, "*");
+    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), all_filter);
+
+    if (gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT)
+    {
+        char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
+        gtk_entry_set_text(GTK_ENTRY(file_entry), filename);
+        gtk_label_set_text(GTK_LABEL(status_label), "Estado: Cargando archivo...");
+
+        // Simular progreso
+        // guint timeout_id = g_timeout_add(50,  static_cast<GSourceFunc>(engine->update_progress_bar), this);
+        // while (g_main_context_iteration(NULL, FALSE))
+        //     ;
+
+        // Cargar archivo en el motor
+        if (engine->loadFile(filename))
+        {
+            gtk_label_set_text(GTK_LABEL(status_label), "Estado: Archivo cargado correctamente");
+            gtk_label_set_text(GTK_LABEL(file_info_label), ("Información: " + engine->getFileType()).c_str());
+
+            // Habilitar botones
+            gtk_widget_set_sensitive(basic_scan_button, TRUE);
+            gtk_widget_set_sensitive(recover_button, TRUE);
+            gtk_widget_set_sensitive(deep_scan_button, TRUE);
+
+            // Mostrar metadata básica automáticamente
+            std::string metadata = engine->getBasicMetadata();
+            set_text_view_content(GTK_TEXT_VIEW(text_view), metadata);
+        }
+        else
+        {
+            gtk_label_set_text(GTK_LABEL(status_label), "Estado: Error al cargar el archivo o formato no compatible");
+            show_message_dialog(GTK_WINDOW(window),
+                                "No se pudo analizar el archivo seleccionado o el formato no es compatible.",
+                                GTK_MESSAGE_WARNING);
+        }
+
+        // g_source_remove(timeout_id);
+        g_free(filename);
+    }
+
+    gtk_widget_destroy(file_chooser);
+}
+
+gboolean MetadataRecoveryGUI::update_progress_bar(gpointer data)
+{
+    static int progress = 0;
+    // MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
+
+    MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
+    if (progress <= 100)
+    {
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(gui->progress_bar), progress / 100.0);
+        progress += 5;
+        return TRUE;
+    }
+    else
+    {
+        progress = 0;
+        return FALSE;
+    }
+}
+
+void MetadataRecoveryGUI::show_message_dialog(GtkWindow *parent, const gchar *message, GtkMessageType type)
+{
+    GtkWidget *dialog = gtk_message_dialog_new(parent,
+                                               GTK_DIALOG_DESTROY_WITH_PARENT,
+                                               type,
+                                               GTK_BUTTONS_OK,
+                                               "%s", message);
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
 }

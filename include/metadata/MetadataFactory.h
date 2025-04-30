@@ -1,4 +1,5 @@
-#pragma once
+#ifndef METADATA_FACTORY_H
+#define METADATA_FACTORY_H
 
 #include <memory>
 #include <string>
@@ -11,6 +12,7 @@
  */
 class MetadataFactory {
 public:
+    MetadataFactory();
     /**
      * @brief Crea un analizador de metadatos específico para el archivo dado.
      * @param filePath Ruta al archivo a analizar.
@@ -20,3 +22,4 @@ public:
 
 
 };
+#endif

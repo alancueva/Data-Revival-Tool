@@ -1,8 +1,9 @@
-#pragma once
+#ifndef METADATA_RECOVERY_ENGINE_H
+#define METADATA_RECOVERY_ENGINE_H
 
-#include <string>
 #include <memory>
-#include "../metadata/FileMetadata.h"
+#include <string>
+#include "../../include/metadata/FileMetadata.h"
 
 class MetadataRecoveryEngine
 {
@@ -12,12 +13,14 @@ private:
     std::string currentFilePath;
 
 public:
-    MetadataRecoveryEngine() : fileLoaded(false) {}
+    MetadataRecoveryEngine();
 
-    // bool loadFile(const std::string& filePath);
-    // std::string getFileType() const;
-    // std::string getBasicMetadata() const;
-    // std::string recoverDeletedMetadata() const;
-    // std::string performDeepScan() const;
-    // bool isFileLoaded() const;
+    bool loadFile(const std::string& filePath);
+    std::string getFileType() const;
+    std::string getBasicMetadata() const;
+    std::string recoverDeletedMetadata();
+    std::string performDeepScan();
+    bool isFileLoaded() const;
 };
+
+#endif
