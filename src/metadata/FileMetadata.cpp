@@ -1,26 +1,27 @@
 #include "../../include/metadata/FileMetadata.h"
 #include <fstream>
 #include <stdexcept>
+using namespace std;
 
-FileMetadata::FileMetadata(const std::string& path) 
+FileMetadata::FileMetadata(const string& path) 
     : filePath(path), isValid(false), fileSize(0) {
     
-    std::ifstream file(path, std::ios::binary);
+    ifstream file(path, ios::binary);
     if (!file) {
-        throw std::runtime_error("No se puede acceder al archivo: " + path);
+        throw runtime_error("No se puede acceder al archivo: " + path);
     }
     
     // Obtener el tamaño del archivo
-    file.seekg(0, std::ios::end);
+    file.seekg(0, ios::end);
     fileSize = file.tellg();
-    file.seekg(0, std::ios::beg);
+    file.seekg(0, ios::beg);
 }
 
 bool FileMetadata::isFileValid() const {
     return isValid;
 }
 
-std::string FileMetadata::getFilePath() const {
+string FileMetadata::getFilePath() const {
     return filePath;
 }
 
@@ -28,9 +29,9 @@ uint64_t FileMetadata::getFileSize() const {
     return fileSize;
 }
 
-std::string FileMetadata::getBasicInfo() const {
-    std::string info = "Ruta: " + filePath + "\n";
-    info += "Tamaño: " + std::to_string(fileSize) + " bytes\n";
+string FileMetadata::getBasicInfo() const {
+    string info = "Ruta: " + filePath + "\n";
+    info += "Tamaño: " + to_string(fileSize) + " bytes\n";
     info += "Tipo: " + getFileType() + "\n";
     return info;
 }
@@ -43,17 +44,28 @@ bool FileMetadata::analyze() {
     return true;
 }
 
-std::string FileMetadata::getFileType() const {
+string FileMetadata::getFileType() const {
     // Implementación provisional
     return "Desconocido";
 }
 
-std::string FileMetadata::extractMetadata() {
+/**
+ * metodo de Simulacion **Corregir**
+ */
+string FileMetadata::extractMetadata() {
+
+    // if (!isValid) {
+    //     return "Archivo no válido o no se puede extraer metadata";
+    // }
     // Implementación provisional
-    return "Metadata extraída";
+    string metadata = "== METADATOS EXTRAÍDOS ==\n\n";
+    
+    metadata += "Ejemplo de metadata: [simulación]\n";
+
+    return metadata;
 }
 
-std::string FileMetadata::recoverOverwrittenMetadata() {
+string FileMetadata::recoverOverwrittenMetadata() {
     // Implementación provisional
     return "Metadata recuperada";
 }

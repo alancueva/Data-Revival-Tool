@@ -1,13 +1,14 @@
 #include "../../include/metadata/AudioMetadata.h"
 #include <fstream>
 #include <sstream>
+using namespace std;
 
-AudioMetadata::AudioMetadata(const std::string& path) 
+AudioMetadata::AudioMetadata(const string& path) 
     : FileMetadata(path), sampleRate(0), bitRate(0), channels(0), duration(0) {
 }
 
 bool AudioMetadata::analyze() {
-    std::ifstream file(filePath, std::ios::binary);
+    ifstream file(filePath, ios::binary);
     if (!file) return false;
     
     fileHeader.resize(16);
@@ -47,14 +48,14 @@ bool AudioMetadata::analyze() {
     return isValid;
 }
 
-std::string AudioMetadata::getFileType() const {
+string AudioMetadata::getFileType() const {
     return "Audio - " + audioFormat;
 }
 
-std::string AudioMetadata::extractMetadata() {
+string AudioMetadata::extractMetadata() {
     if (!isValid) return "Archivo no válido o no es un audio compatible";
     
-    std::stringstream metadata;
+    stringstream metadata;
     metadata << "== METADATOS DE AUDIO ==\n\n";
     metadata << "Formato: " << audioFormat << "\n";
     
@@ -99,14 +100,14 @@ std::string AudioMetadata::extractMetadata() {
     return metadata.str();
 }
 
-std::string AudioMetadata::recoverOverwrittenMetadata() {
+string AudioMetadata::recoverOverwrittenMetadata() {
     if (!isValid) return "No se puede recuperar metadata de un archivo no válido";
     
-    std::stringstream recoveredData;
+    stringstream recoveredData;
     recoveredData << "== METADATOS RECUPERADOS ==\n\n";
     
     // Simulación de recuperación de metadatos
-    if (audioFormat.find("MP3") != std::string::npos) {
+    if (audioFormat.find("MP3") != string::npos) {
         recoveredData << "Metadatos originales recuperados:\n";
         recoveredData << "- Etiquetas ID3v1 originales:\n";
         recoveredData << "  * Título original: \"" << (title.empty() ? "Demo - Sin título" : "Versión previa de " + title) << "\"\n";
@@ -128,7 +129,7 @@ std::string AudioMetadata::recoverOverwrittenMetadata() {
     return recoveredData.str();
 }
 
-bool AudioMetadata::analyzeMP3(std::ifstream& file) {
+bool AudioMetadata::analyzeMP3(ifstream& file) {
     // Simulación de análisis de MP3
     title = "Amazing Song";
     artist = "Great Artist";
@@ -143,7 +144,7 @@ bool AudioMetadata::analyzeMP3(std::ifstream& file) {
     return true;
 }
 
-bool AudioMetadata::analyzeWAV(std::ifstream& file) {
+bool AudioMetadata::analyzeWAV(ifstream& file) {
     // Simulación de análisis de WAV
     title = "Voice Recording";
     artist = "User";
@@ -155,7 +156,7 @@ bool AudioMetadata::analyzeWAV(std::ifstream& file) {
     return true;
 }
 
-bool AudioMetadata::analyzeOGG(std::ifstream& file) {
+bool AudioMetadata::analyzeOGG(ifstream& file) {
     // Implementación para archivos OGG
     title = "Podcast Episode 12";
     artist = "Podcast Host";
@@ -169,7 +170,7 @@ bool AudioMetadata::analyzeOGG(std::ifstream& file) {
     return true;
 }
 
-bool AudioMetadata::analyzeM4A(std::ifstream& file) {
+bool AudioMetadata::analyzeM4A(ifstream& file) {
     // Implementación para archivos M4A/AAC
     title = "Audiobook Chapter 1";
     artist = "Narrator Name";

@@ -4,7 +4,7 @@
 #include "../../include/core/MetadataRecoveryEngine.h"
 #include <string>
 #include <memory>
-
+using namespace std;
 
 MetadataRecoveryEngine::MetadataRecoveryEngine() : fileLoaded(false) 
 {
@@ -12,7 +12,7 @@ MetadataRecoveryEngine::MetadataRecoveryEngine() : fileLoaded(false)
 }
 
 
-bool MetadataRecoveryEngine::loadFile(const std::string &filePath)
+bool MetadataRecoveryEngine::loadFile(const string &filePath)
 {
     currentFilePath = filePath;
     fileAnalyzer = MetadataFactory::createAnalyzer(filePath);
@@ -27,33 +27,33 @@ bool MetadataRecoveryEngine::loadFile(const std::string &filePath)
     return fileLoaded;
 }
 
-std::string MetadataRecoveryEngine::getFileType() const
+string MetadataRecoveryEngine::getFileType() const
 {
     if (!fileLoaded)
         return "Ningún archivo cargado";
     return fileAnalyzer->getFileType();
 }
 
-std::string MetadataRecoveryEngine::getBasicMetadata() const
+string MetadataRecoveryEngine::getBasicMetadata() const
 {
     if (!fileLoaded)
         return "Ningún archivo cargado";
     return fileAnalyzer->extractMetadata();
 }
 
-std::string MetadataRecoveryEngine::recoverDeletedMetadata()
+string MetadataRecoveryEngine::recoverDeletedMetadata()
 {
     if (!fileLoaded)
         return "Ningún archivo cargado";
     return fileAnalyzer->recoverOverwrittenMetadata();
 }
 
-std::string MetadataRecoveryEngine::performDeepScan()
+string MetadataRecoveryEngine::performDeepScan()
 {
     if (!fileLoaded)
         return "Ningún archivo cargado";
 
-    std::string report = "== ANÁLISIS PROFUNDO ==\n\n";
+    string report = "== ANÁLISIS PROFUNDO ==\n\n";
     report += "Archivo: " + fileAnalyzer->getFilePath() + "\n";
     report += "Tipo: " + fileAnalyzer->getFileType() + "\n\n";
 

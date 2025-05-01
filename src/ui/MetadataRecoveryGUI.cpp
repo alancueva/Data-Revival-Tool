@@ -16,7 +16,7 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              scroll_window(nullptr),
                                              file_info_label(nullptr),
                                              text_view(nullptr),
-                                             progress_bar(nullptr),
+                                             //progress_bar(nullptr),
                                              scan_label(nullptr),
                                              status_label(nullptr),
                                              engine(new MetadataRecoveryEngine()),
@@ -28,8 +28,12 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              all_filter(nullptr),
                                              zip_filter(nullptr)
 {
+    progress_bar = nullptr;
 }
 
+/**
+ * @brief cambia el icono de la ventana principal de la GUI.
+ */
 void MetadataRecoveryGUI::cambiar_icono_ventana()
 {
     gchar *dir = g_get_current_dir();
@@ -46,15 +50,27 @@ void MetadataRecoveryGUI::cambiar_icono_ventana()
     g_free(dir);
 }
 
+/*
+ * @brief Maneja el evento de clic en el botón de archivo.
+ * @param widget Puntero al widget que emitió la señal.
+ * @param data Datos adicionales (puntero a la instancia de MetadataRecoveryGUI).
+ * @return void
+ */
 void MetadataRecoveryGUI::on_file_button_clicked(GtkWidget *widget, gpointer data)
 {
-    // Cast the data pointer back to our class instance
     MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
-
-    // Call the instance method
+    /**
+     * * Abre el cuadro de diálogo para seleccionar un archivo.
+     * * Al seleccionar un archivo, se carga y analiza el archivo.
+     */
     gui->on_load_file_clicked();
+    gui->update_progress_bar(data);
 }
 
+/**
+ * @brief Crea la ventana principal de la GUI.
+ * @return void
+ */
 void MetadataRecoveryGUI::crear()
 {
 
@@ -91,6 +107,10 @@ void MetadataRecoveryGUI::crear()
     // gtk_entry_set_editable(GTK_ENTRY(file_entry), FALSE);
     gtk_grid_attach(GTK_GRID(file_grid), file_entry, 1, 0, 1, 1);
 
+    /**
+     * Boton Explorar...
+     * @brief Botón para cargar el archivo seleccionado.
+     */
     file_button = gtk_button_new_with_label("Explorar...");
     g_signal_connect(file_button, "clicked", G_CALLBACK(on_file_button_clicked), this);
     gtk_grid_attach(GTK_GRID(file_grid), file_button, 2, 0, 1, 1);
@@ -162,11 +182,20 @@ void MetadataRecoveryGUI::crear()
                           "Software libre y de código abierto (GNU GPL v3).");
 }
 
+/**
+ * @brief Muestra la ventana principal de la GUI.
+ */
 void MetadataRecoveryGUI::mostrar()
 {
     gtk_widget_show_all(window);
 }
 
+/**
+ * @brief Callback para el evento de cierre de la ventana.
+ * @param widget Puntero al widget que emitió la señal.
+ * @param data Datos adicionales (no se utilizan en este caso).
+ * @return void
+ */
 gboolean MetadataRecoveryGUI::on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
 {
     if (event->keyval == GDK_KEY_F11)
@@ -190,15 +219,29 @@ gboolean MetadataRecoveryGUI::on_key_press(GtkWidget *widget, GdkEventKey *event
     return FALSE;
 }
 
+/**
+ * @brief Establece el contenido del GtkTextView.
+ * @param text_view Puntero al GtkTextView.
+ * @param content Contenido a establecer.
+ * @return void
+ */
 void MetadataRecoveryGUI::set_text_view_content(GtkTextView *text_view, const std::string &content)
 {
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
     gtk_text_buffer_set_text(buffer, content.c_str(), -1);
 }
 
+/**
+ * @brief Carga un archivo seleccionado por el usuario y lo analiza.
+ * @return void
+ */
 void MetadataRecoveryGUI::on_load_file_clicked()
 {
 
+    /**
+     * Abre el cuadro de diálogo para seleccionar un archivo.
+     * Al seleccionar un archivo, se carga y analiza el archivo.
+     */
     file_chooser = gtk_file_chooser_dialog_new("Abrir Archivo",
                                                GTK_WINDOW(window),
                                                GTK_FILE_CHOOSER_ACTION_OPEN,
@@ -236,10 +279,13 @@ void MetadataRecoveryGUI::on_load_file_clicked()
         gtk_entry_set_text(GTK_ENTRY(file_entry), filename);
         gtk_label_set_text(GTK_LABEL(status_label), "Estado: Cargando archivo...");
 
-        // Simular progreso
-        // guint timeout_id = g_timeout_add(50,  static_cast<GSourceFunc>(engine->update_progress_bar), this);
-        // while (g_main_context_iteration(NULL, FALSE))
-        //     ;
+        /**
+         * Simular progreso de carga
+         * Se puede eliminar en la versión final o mejorarlo adaptando segun la carga del archivo.
+         */
+        guint timeout_id = g_timeout_add(50, update_progress_bar, window);
+        while (g_main_context_iteration(NULL, FALSE))
+            ;
 
         // Cargar archivo en el motor
         if (engine->loadFile(filename))
@@ -255,6 +301,8 @@ void MetadataRecoveryGUI::on_load_file_clicked()
             // Mostrar metadata básica automáticamente
             std::string metadata = engine->getBasicMetadata();
             set_text_view_content(GTK_TEXT_VIEW(text_view), metadata);
+
+
         }
         else
         {
@@ -264,22 +312,24 @@ void MetadataRecoveryGUI::on_load_file_clicked()
                                 GTK_MESSAGE_WARNING);
         }
 
-        // g_source_remove(timeout_id);
+        g_source_remove(timeout_id);
         g_free(filename);
     }
 
     gtk_widget_destroy(file_chooser);
 }
 
+/**
+ * @brief Actualiza la barra de progreso.
+ * @param data Puntero a los datos de la barra de progreso.
+ * @return TRUE si la barra de progreso debe seguir actualizándose, FALSE si se debe detener.
+ */
 gboolean MetadataRecoveryGUI::update_progress_bar(gpointer data)
 {
     static int progress = 0;
-    // MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
-
-    MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
     if (progress <= 100)
     {
-        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(gui->progress_bar), progress / 100.0);
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_bar), progress / 100.0);
         progress += 5;
         return TRUE;
     }
@@ -290,6 +340,13 @@ gboolean MetadataRecoveryGUI::update_progress_bar(gpointer data)
     }
 }
 
+/**
+ * @brief Muestra un cuadro de diálogo con un mensaje.
+ * @param parent Ventana padre del cuadro de diálogo.
+ * @param message Mensaje a mostrar.
+ * @param type Tipo de mensaje (información, advertencia, error).
+ * @return void
+ */
 void MetadataRecoveryGUI::show_message_dialog(GtkWindow *parent, const gchar *message, GtkMessageType type)
 {
     GtkWidget *dialog = gtk_message_dialog_new(parent,

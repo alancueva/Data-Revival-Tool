@@ -3,12 +3,14 @@
 #include <sstream>
 #include <ctime>
 
-DocumentMetadata::DocumentMetadata(const std::string& path) 
+using namespace std;
+
+DocumentMetadata::DocumentMetadata(const string& path) 
     : FileMetadata(path), pageCount(0) {
 }
 
 bool DocumentMetadata::analyze() {
-    std::ifstream file(filePath, std::ios::binary);
+    ifstream file(filePath, ios::binary);
     if (!file) return false;
     
     fileHeader.resize(16);
@@ -35,14 +37,14 @@ bool DocumentMetadata::analyze() {
     return isValid;
 }
 
-std::string DocumentMetadata::getFileType() const {
+string DocumentMetadata::getFileType() const  {
     return "Documento - " + documentFormat;
 }
 
-std::string DocumentMetadata::extractMetadata() {
+string DocumentMetadata::extractMetadata() {
     if (!isValid) return "Archivo no válido o no es un documento compatible";
     
-    std::stringstream metadata;
+    stringstream metadata;
     metadata << "== METADATOS DE DOCUMENTO ==\n\n";
     metadata << "Formato: " << documentFormat << "\n";
     
@@ -81,13 +83,13 @@ std::string DocumentMetadata::extractMetadata() {
     return metadata.str();
 }
 
-std::string DocumentMetadata::recoverOverwrittenMetadata() {
+string DocumentMetadata::recoverOverwrittenMetadata() {
     if (!isValid) return "No se puede recuperar metadata de un archivo no válido";
     
-    std::stringstream recoveredData;
+    stringstream recoveredData;
     recoveredData << "== METADATOS RECUPERADOS ==\n\n";
     
-    if (documentFormat.find("PDF") != std::string::npos) {
+    if (documentFormat.find("PDF") != string::npos) {
         recoveredData << "Metadatos originales recuperados:\n";
         recoveredData << "- Autor original: Pedro Sánchez (modificado posteriormente)\n";
         recoveredData << "- Fecha de creación original: 05/01/2023\n";
@@ -96,7 +98,7 @@ std::string DocumentMetadata::recoverOverwrittenMetadata() {
         recoveredData << "  * 28/02/2023 - Segunda revisión\n";
         recoveredData << "- Contenido eliminado en pág. 3: 'Información confidencial...'\n";
         recoveredData << "- Contenido redactado en pág. 7-8: recuperado parcialmente\n";
-    } else if (documentFormat.find("Office") != std::string::npos) {
+    } else if (documentFormat.find("Office") != string::npos) {
         recoveredData << "Metadatos originales recuperados:\n";
         recoveredData << "- Autor original: Ana González\n";
         recoveredData << "- Colaboradores:\n";
@@ -112,7 +114,7 @@ std::string DocumentMetadata::recoverOverwrittenMetadata() {
     return recoveredData.str();
 }
 
-bool DocumentMetadata::analyzePDF(std::ifstream& file) {
+bool DocumentMetadata::analyzePDF(ifstream& file) {
     // Simulación: en una implementación real analizaríamos la estructura PDF
     author = "María López";
     title = "Informe Anual 2023";
@@ -125,7 +127,7 @@ bool DocumentMetadata::analyzePDF(std::ifstream& file) {
     return true;
 }
 
-bool DocumentMetadata::analyzeOpenXML(std::ifstream& file) {
+bool DocumentMetadata::analyzeOpenXML(ifstream& file) {
     // Simulación: en una implementación real extraeríamos los XMLs internos
     author = "Carlos Rodríguez";
     title = "Presentación de Proyecto";
@@ -139,7 +141,7 @@ bool DocumentMetadata::analyzeOpenXML(std::ifstream& file) {
     return true;
 }
 
-bool DocumentMetadata::analyzeOldOffice(std::ifstream& file) {
+bool DocumentMetadata::analyzeOldOffice(ifstream& file) {
     // Simulación: en una implementación real analizaríamos el formato OLE
     author = "Javier González";
     title = "Presupuesto 2023";
