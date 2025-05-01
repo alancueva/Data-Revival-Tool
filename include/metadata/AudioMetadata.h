@@ -4,39 +4,40 @@
 #include "FileMetadata.h"
 #include <string>
 #include <vector>
+using namespace std;
 
 class AudioMetadata: public FileMetadata {
 public:
     
-    AudioMetadata(const std::string& path);
+    AudioMetadata(const string& path);
 
     bool analyze();
 
-    virtual std::string getFileType() const;
-    std::string extractMetadata();
-    std::string recoverOverwrittenMetadata();
+    virtual string getFileType() const;
+    string extractMetadata();
+    string recoverOverwrittenMetadata();
 
 private:
     
-    std::string audioFormat;
-    std::string title;
-    std::string artist;
-    std::string album;
-    std::string year;
-    std::string genre;
-    std::string filePath;
+    string audioFormat;
+    string title;
+    string artist;
+    string album;
+    string year;
+    string genre;
+    string filePath;
     int sampleRate;
     int bitRate;
     int channels;
     int duration;
 
-    std::vector<unsigned char> fileHeader;
+    vector<unsigned char> fileHeader;
     bool isValid;
     // Métodos para análisis según tipo
-    bool analyzeMP3(std::ifstream& file);
-    bool analyzeWAV(std::ifstream& file);
-    bool analyzeOGG(std::ifstream& file);
-    bool analyzeM4A(std::ifstream& file);
+    bool analyzeMP3(ifstream& file);
+    bool analyzeWAV(ifstream& file);
+    bool analyzeOGG(ifstream& file);
+    bool analyzeM4A(ifstream& file);
 };
 
 #endif

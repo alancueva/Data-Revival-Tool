@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+using namespace std;
 /**
  * Clase que representa los metadatos extraídos de un documento (PDF, DOCX, etc.).
  * Hereda de FileMetadata y proporciona métodos específicos para el análisis y recuperación de información.
@@ -12,29 +13,29 @@
 class DocumentMetadata : public FileMetadata
 {
 public:
-    DocumentMetadata(const std::string& path);
+    DocumentMetadata(const string& path);
 
     bool analyze() ;
-    std::string getFileType() const ;
-    std::string extractMetadata() ;
-    std::string recoverOverwrittenMetadata() ;
+    string getFileType() const;
+    string extractMetadata() ;
+    string recoverOverwrittenMetadata() ;
 
 private:
-    bool analyzePDF(std::ifstream& file);
-    bool analyzeOpenXML(std::ifstream& file);
-    bool analyzeOldOffice(std::ifstream& file);
-    std::string filePath;
+    bool analyzePDF(ifstream& file);
+    bool analyzeOpenXML(ifstream& file);
+    bool analyzeOldOffice(ifstream& file);
+    string filePath;
     bool isValid = false;
-    std::string documentFormat;
-    std::string title;
-    std::string author;
-    std::string company;
-    std::string creationDate;
-    std::string lastModified;
-    std::string application;
-    std::string keywords;
+    string documentFormat;
+    string title;
+    string author;
+    string company;
+    string creationDate;
+    string lastModified;
+    string application;
+    string keywords;
     int pageCount;
-    std::vector<uint8_t> fileHeader;
+    vector<uint8_t> fileHeader;
 };
 
 #endif 

@@ -3,30 +3,46 @@
 
 #include <string>
 #include <cstdint>
+using namespace std;
 
-class FileMetadata {
+class FileMetadata
+{
 public:
-    
-    FileMetadata(const std::string& path);
+    /**
+     * @brief Constructor de la clase FileMetadata.
+     * @param path Ruta al archivo a analizar.
+     */
+    FileMetadata(const string &path);
+    /*
+    * @brief Destructor of the FileMetadata class.
+    */
+    ~FileMetadata();
 
     bool isFileValid() const;
-    std::string getFilePath() const;
+    string getFilePath() const;
     uint64_t getFileSize() const;
-    std::string getBasicInfo() const;
+    string getBasicInfo() const;
 
-    virtual ~FileMetadata() = default;
 
-     bool analyze();
-     std::string getFileType() const ;
-     std::string extractMetadata();
-     std::string recoverOverwrittenMetadata();
+    bool analyze();
 
+    /**
+     * @brief Método para analizar el archivo y extraer metadatos.
+     * @return string con los metadatos extraídos.
+     */
+    virtual string getFileType() const;
+
+    /**
+     * @brief Extrae los metadatos del archivo.
+     * @return string con los metadatos extraídos.
+     */
+    string extractMetadata();
+    string recoverOverwrittenMetadata();
 
 private:
-    std::string filePath;
+    string filePath;
     bool isValid;
     uint64_t fileSize;
-
 };
 
-#endif 
+#endif

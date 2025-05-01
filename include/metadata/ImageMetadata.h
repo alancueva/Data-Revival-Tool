@@ -4,40 +4,41 @@
 #include "FileMetadata.h"
 #include <string>
 #include <vector>
+using namespace std;
 
 class ImageMetadata : public FileMetadata {
 public:
-    ImageMetadata(const std::string& path);
+    ImageMetadata(const string& path);
     
     bool analyze() ;
-    std::string getFileType() const ;
-    std::string extractMetadata() ;
-    std::string recoverOverwrittenMetadata() ;
+    string getFileType() const ;
+    string extractMetadata() ;
+    string recoverOverwrittenMetadata() ;
 
 private:
-    std::string imageFormat;
-    std::vector<unsigned char> fileHeader;
+    string imageFormat;
+    vector<unsigned char> fileHeader;
 
-    std::string filePath;
+    string filePath;
     bool isValid = false;
 
     int width;
     int height;
     int colorDepth;
     
-    std::string creationDate;
-    std::string camera;
-    std::string software;
+    string creationDate;
+    string camera;
+    string software;
     
     bool hasGPS = false;
-    std::string gpsLatitude;
-    std::string gpsLongitude;
+    string gpsLatitude;
+    string gpsLongitude;
 
-    bool analyzeJPEG(std::ifstream& file);
-    bool analyzePNG(std::ifstream& file);
-    bool analyzeTIFF(std::ifstream& file);
-    bool analyzeBMP(std::ifstream& file);
-    bool analyzeGIF(std::ifstream& file);
+    bool analyzeJPEG(ifstream& file);
+    bool analyzePNG(ifstream& file);
+    bool analyzeTIFF(ifstream& file);
+    bool analyzeBMP(ifstream& file);
+    bool analyzeGIF(ifstream& file);
 };
 
 #endif

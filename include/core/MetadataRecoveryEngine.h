@@ -4,22 +4,23 @@
 #include <memory>
 #include <string>
 #include "../../include/metadata/FileMetadata.h"
+using namespace std;
 
 class MetadataRecoveryEngine
 {
 private:
-    std::unique_ptr<FileMetadata> fileAnalyzer;
+    unique_ptr<FileMetadata> fileAnalyzer;
     bool fileLoaded;
-    std::string currentFilePath;
+    string currentFilePath;
 
 public:
     MetadataRecoveryEngine();
 
-    bool loadFile(const std::string& filePath);
-    std::string getFileType() const;
-    std::string getBasicMetadata() const;
-    std::string recoverDeletedMetadata();
-    std::string performDeepScan();
+    bool loadFile(const string& filePath);
+    string getFileType() const;
+    string getBasicMetadata() const;
+    string recoverDeletedMetadata();
+    string performDeepScan();
     bool isFileLoaded() const;
 };
 
