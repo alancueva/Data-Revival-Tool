@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include <iostream>
 #include "../include/ui/MetadataRecoveryGUI.h"
+using namespace std;
 
 int main(int argc, char *argv[])
 {
@@ -14,9 +15,9 @@ int main(int argc, char *argv[])
         gtk_main();
     
     }
-    catch (const std::exception &e)
+    catch (const exception &e)
     {
-        std::cerr << "Error crítico: " << e.what() << std::endl;
+        cerr << "Error crítico: " << e.what() << endl;
         return 1;
     }
 
