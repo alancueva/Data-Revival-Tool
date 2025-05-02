@@ -32,7 +32,7 @@ private:
     GtkWidget *results_frame;
     GtkWidget *results_vbox;
     GtkWidget *scroll_window;
-    static GtkWidget *progress_bar;
+    GtkWidget *progress_bar;
     GtkWidget *scan_label;
     GtkWidget *status_label;
 
@@ -112,10 +112,19 @@ public:
 
     /**
      * @brief Actualiza la barra de progreso.
-     * @param data Puntero a los datos de la barra de progreso.
      * @return TRUE si la barra de progreso debe seguir actualizándose, FALSE si se debe detener.
      */
-    static gboolean update_progress_bar(gpointer data);
+    gboolean update_progress_bar();
+
+    /*
+    * Función estática que actúa como intermediaria para la función de actualización de la barra de progreso.
+    * @brief Actualiza la barra de progreso de forma estática.
+    * @param data Puntero a los datos de la barra de progreso.
+    * @return TRUE si la barra de progreso debe seguir actualizándose, FALSE si se debe detener.
+    * 
+    */
+    static gboolean update_progress_bar_static(gpointer data);
+    
 };
 
 #endif

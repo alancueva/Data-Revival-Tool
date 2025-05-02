@@ -12,12 +12,13 @@ private:
     unique_ptr<FileMetadata> fileAnalyzer;
     bool fileLoaded;
     string currentFilePath;
+    string filePath;
 
 public:
     MetadataRecoveryEngine();
 
     bool loadFile(const string& filePath);
-    string getFileType() const;
+    string getFileType(const filesystem::path& filePath);
     string getBasicMetadata() const;
     string recoverDeletedMetadata();
     string performDeepScan();

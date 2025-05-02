@@ -16,7 +16,7 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              scroll_window(nullptr),
                                              file_info_label(nullptr),
                                              text_view(nullptr),
-                                             //progress_bar(nullptr),
+                                             progress_bar(nullptr),
                                              scan_label(nullptr),
                                              status_label(nullptr),
                                              engine(new MetadataRecoveryEngine()),
@@ -28,7 +28,6 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              all_filter(nullptr),
                                              zip_filter(nullptr)
 {
-    progress_bar = nullptr;
 }
 
 /**
@@ -58,13 +57,11 @@ void MetadataRecoveryGUI::cambiar_icono_ventana()
  */
 void MetadataRecoveryGUI::on_file_button_clicked(GtkWidget *widget, gpointer data)
 {
-    MetadataRecoveryGUI *gui = static_cast<MetadataRecoveryGUI *>(data);
     /**
      * * Abre el cuadro de diálogo para seleccionar un archivo.
      * * Al seleccionar un archivo, se carga y analiza el archivo.
      */
-    gui->on_load_file_clicked();
-    gui->update_progress_bar(data);
+    static_cast<MetadataRecoveryGUI *>(data)->on_load_file_clicked();
 }
 
 /**
@@ -283,7 +280,7 @@ void MetadataRecoveryGUI::on_load_file_clicked()
          * Simular progreso de carga
          * Se puede eliminar en la versión final o mejorarlo adaptando segun la carga del archivo.
          */
-        guint timeout_id = g_timeout_add(50, update_progress_bar, window);
+        guint timeout_id = g_timeout_add(50, update_progress_bar_static, this);
         while (g_main_context_iteration(NULL, FALSE))
             ;
 
@@ -291,7 +288,7 @@ void MetadataRecoveryGUI::on_load_file_clicked()
         if (engine->loadFile(filename))
         {
             gtk_label_set_text(GTK_LABEL(status_label), "Estado: Archivo cargado correctamente");
-            gtk_label_set_text(GTK_LABEL(file_info_label), ("Información: " + engine->getFileType()).c_str());
+            gtk_label_set_text(GTK_LABEL(file_info_label), ("Información: " + engine->getFileType(filename)).c_str());
 
             // Habilitar botones
             gtk_widget_set_sensitive(basic_scan_button, TRUE);
@@ -319,12 +316,18 @@ void MetadataRecoveryGUI::on_load_file_clicked()
     gtk_widget_destroy(file_chooser);
 }
 
+
+gboolean MetadataRecoveryGUI::update_progress_bar_static(gpointer data)
+{
+    return static_cast<MetadataRecoveryGUI *>(data)->update_progress_bar();
+}
+
 /**
  * @brief Actualiza la barra de progreso.
  * @param data Puntero a los datos de la barra de progreso.
  * @return TRUE si la barra de progreso debe seguir actualizándose, FALSE si se debe detener.
  */
-gboolean MetadataRecoveryGUI::update_progress_bar(gpointer data)
+gboolean MetadataRecoveryGUI::update_progress_bar()
 {
     static int progress = 0;
     if (progress <= 100)

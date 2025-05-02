@@ -22,6 +22,7 @@ unique_ptr<FileMetadata> MetadataFactory::createAnalyzer(const string &filePath)
     if (extension == "jpg" || extension == "jpeg" || extension == "png" || extension == "tiff" || extension == "bmp" || extension == "gif")
     {
         return make_unique<ImageMetadata>(filePath);
+        cout << "Creando analizador de imagen para: " << filePath << endl;
     }
     else if (extension == "pdf" || extension == "doc" || extension == "docx" || extension == "xls" || extension == "xlsx" || extension == "ppt" || extension == "pptx")
     {

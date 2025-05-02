@@ -50,7 +50,7 @@ bool ImageMetadata::analyze()
     }
     else
     {
-        imageFormat = "Desconocido";
+        imageFormat = "Desconocido  imagen";
         isValid = false;
     }
 

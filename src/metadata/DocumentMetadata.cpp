@@ -30,7 +30,7 @@ bool DocumentMetadata::analyze() {
         documentFormat = "PDF";
         isValid = analyzePDF(file);
     } else {
-        documentFormat = "Desconocido";
+        documentFormat = "Desconocido documento";
         isValid = false;
     }
     

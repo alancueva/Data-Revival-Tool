@@ -6,7 +6,7 @@
 #include <memory>
 using namespace std;
 
-MetadataRecoveryEngine::MetadataRecoveryEngine() : fileLoaded(false) 
+MetadataRecoveryEngine::MetadataRecoveryEngine() : fileLoaded(false), filePath(""), currentFilePath("") 
 {
 
 }
@@ -27,11 +27,11 @@ bool MetadataRecoveryEngine::loadFile(const string &filePath)
     return fileLoaded;
 }
 
-string MetadataRecoveryEngine::getFileType() const
+string MetadataRecoveryEngine::getFileType(const filesystem::path& filePath)
 {
     if (!fileLoaded)
         return "Ningún archivo cargado";
-    return fileAnalyzer->getFileType();
+    return fileAnalyzer->getFileType(filePath);
 }
 
 string MetadataRecoveryEngine::getBasicMetadata() const
@@ -55,7 +55,7 @@ string MetadataRecoveryEngine::performDeepScan()
 
     string report = "== ANÁLISIS PROFUNDO ==\n\n";
     report += "Archivo: " + fileAnalyzer->getFilePath() + "\n";
-    report += "Tipo: " + fileAnalyzer->getFileType() + "\n\n";
+    report += "Tipo: " + fileAnalyzer->getFileType(filePath) + "\n\n";
 
     report += "Metadatos actuales:\n";
     report += fileAnalyzer->extractMetadata() + "\n\n";
