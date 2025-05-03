@@ -13,6 +13,11 @@ class MetadataRecoveryGUI
 {
 private:
     GtkWidget *window;
+    GtkWidget *m_header_bar;
+    GtkWidget *m_content_box;
+    GtkWidget *m_button_header;
+    GtkWidget *m_label;
+    GtkWidget *vbox;
     GtkWidget *main_vbox;
     GtkWidget *file_frame;
     GtkWidget *file_grid;
@@ -56,7 +61,7 @@ public:
      * @brief Destructor de la clase MetadataRecoveryGUI.
      *
      */
-    //~MetadataRecoveryGUI();
+    ~MetadataRecoveryGUI();
 
     /*
      * @brief Crea la ventana principal de la GUI.

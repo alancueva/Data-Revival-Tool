@@ -3,6 +3,10 @@
 #include <iostream>
 
 MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
+                                             m_header_bar(nullptr),
+                                             m_button_header(nullptr),
+                                             m_label(nullptr),
+                                             vbox(nullptr),
                                              file_entry(nullptr),
                                              file_button(nullptr),
                                              file_chooser(nullptr),
@@ -28,6 +32,16 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              all_filter(nullptr),
                                              zip_filter(nullptr)
 {
+}
+
+MetadataRecoveryGUI::~MetadataRecoveryGUI()
+{
+    // Liberar recursos
+    if (engine)
+    {
+        delete engine;
+    }
+    gtk_widget_destroy(window);
 }
 
 /**
@@ -74,15 +88,56 @@ void MetadataRecoveryGUI::crear()
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Herramienta de recuperación de datos v1.0");
     // gtk_window_fullscreen(GTK_WINDOW(window));
-
     gtk_widget_set_size_request(window, 640, 480);
     gtk_window_maximize(GTK_WINDOW(window));
-
     gtk_container_set_border_width(GTK_CONTAINER(window), 10);
-
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     // icono de la ventana
     cambiar_icono_ventana();
+
+    // barra de menú
+    m_header_bar = gtk_header_bar_new();
+    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(m_header_bar), TRUE);
+    gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Herramienta");
+    gtk_window_set_titlebar(GTK_WINDOW(window), m_header_bar);
+
+    // Botones de la barra de menú
+    const char *button_labels[] = {"Metadatos", "Recuperación"};
+    const char *button_tips[] = {"Recuperación de Metadatos de un Archivos",
+                                 "Recuperar Metadatos de Archivos Eliminados"};
+    const char *button_icons[] = {
+        "data-recovery-30.png",
+        "recuperación-de-datos-30.png"};
+
+    // tamaño de los iconos
+    // Se puede cambiar el tamaño de los iconos según sea necesario
+    const int icon_width = 20;  
+    const int icon_height = 20; 
+
+    for (int i = 0; i < 2; i++)
+    {
+        m_button_header = gtk_button_new_with_label(button_labels[i]);
+        gtk_button_set_relief(GTK_BUTTON(m_button_header), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(m_button_header, button_tips[i]);
+
+        gchar *dir = g_get_current_dir();
+        gchar *icon_path = g_build_filename(dir, "resources", "icon", button_icons[i], NULL);
+
+        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_path, icon_width, icon_height, TRUE, NULL);
+        GtkWidget *icon = gtk_image_new_from_pixbuf(pixbuf);
+        gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+        gtk_button_set_image_position(GTK_BUTTON(m_button_header), GTK_POS_LEFT);
+
+        gtk_button_set_always_show_image(GTK_BUTTON(m_button_header), TRUE);
+        gtk_button_set_use_underline(GTK_BUTTON(m_button_header), TRUE);
+        gtk_header_bar_pack_start(GTK_HEADER_BAR(m_header_bar), m_button_header);
+
+        if (pixbuf)
+            g_object_unref(pixbuf);
+        g_free(icon_path);
+        g_free(dir);
+    }
+
     // Layout principal
     main_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(window), main_vbox);
@@ -112,26 +167,26 @@ void MetadataRecoveryGUI::crear()
     g_signal_connect(file_button, "clicked", G_CALLBACK(on_file_button_clicked), this);
     gtk_grid_attach(GTK_GRID(file_grid), file_button, 2, 0, 1, 1);
 
-    // Sección de opciones de análisis
-    options_frame = gtk_frame_new("Opciones de Análisis");
-    gtk_box_pack_start(GTK_BOX(main_vbox), options_frame, FALSE, FALSE, 0);
+    // // Sección de opciones de análisis
+    // options_frame = gtk_frame_new("Opciones de Análisis");
+    // gtk_box_pack_start(GTK_BOX(main_vbox), options_frame, FALSE, FALSE, 0);
 
-    options_grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(options_grid), 5);
-    gtk_grid_set_column_spacing(GTK_GRID(options_grid), 5);
-    gtk_container_set_border_width(GTK_CONTAINER(options_grid), 10);
-    gtk_container_add(GTK_CONTAINER(options_frame), options_grid);
+    // options_grid = gtk_grid_new();
+    // gtk_grid_set_row_spacing(GTK_GRID(options_grid), 5);
+    // gtk_grid_set_column_spacing(GTK_GRID(options_grid), 5);
+    // gtk_container_set_border_width(GTK_CONTAINER(options_grid), 10);
+    // gtk_container_add(GTK_CONTAINER(options_frame), options_grid);
 
-    scan_label = gtk_label_new("Tipo de Análisis:");
-    gtk_grid_attach(GTK_GRID(options_grid), scan_label, 0, 0, 1, 1);
+    // scan_label = gtk_label_new("Tipo de Análisis:");
+    // gtk_grid_attach(GTK_GRID(options_grid), scan_label, 0, 0, 1, 1);
 
-    // ComboBox para seleccionar el tipo de análisis
-    scan_combo = gtk_combo_box_text_new();
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Rápido");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Estándar");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Profundo");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(scan_combo), 1); // Seleccionar "Estándar" por defecto
-    gtk_grid_attach(GTK_GRID(options_grid), scan_combo, 1, 0, 2, 1);
+    // // ComboBox para seleccionar el tipo de análisis
+    // scan_combo = gtk_combo_box_text_new();
+    // gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Rápido");
+    // gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Estándar");
+    // gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(scan_combo), "Análisis Profundo");
+    // gtk_combo_box_set_active(GTK_COMBO_BOX(scan_combo), 1); // Seleccionar "Estándar" por defecto
+    // gtk_grid_attach(GTK_GRID(options_grid), scan_combo, 1, 0, 2, 1);
 
     // Sección de resultados
     results_frame = gtk_frame_new("Resultados");
@@ -146,6 +201,7 @@ void MetadataRecoveryGUI::crear()
     gtk_box_pack_start(GTK_BOX(results_vbox), file_info_label, FALSE, FALSE, 0);
 
     // Área de texto con scroll para mostrar resultados
+
     GtkWidget *scroll_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_size_request(scroll_window, -1, 300);
@@ -298,8 +354,6 @@ void MetadataRecoveryGUI::on_load_file_clicked()
             // Mostrar metadata básica automáticamente
             std::string metadata = engine->getBasicMetadata();
             set_text_view_content(GTK_TEXT_VIEW(text_view), metadata);
-
-
         }
         else
         {
@@ -315,7 +369,6 @@ void MetadataRecoveryGUI::on_load_file_clicked()
 
     gtk_widget_destroy(file_chooser);
 }
-
 
 gboolean MetadataRecoveryGUI::update_progress_bar_static(gpointer data)
 {
