@@ -21,7 +21,8 @@ set(SOURCES
     src/metadata/ImageMetadata.cpp
     src/metadata/MetadataFactory.cpp
     src/core/MetadataRecoveryEngine.cpp
-    # src/core/MetadataRecovery.cpp
+    src/ui/MetadataPanel.cpp 
+    src/ui/RecoveryPanel.cpp
     src/ui/MetadataRecoveryGUI.cpp
 )
 
