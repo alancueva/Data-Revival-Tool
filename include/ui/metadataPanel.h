@@ -1,7 +1,7 @@
 #ifndef METADATAPANEL_H
 #define METADATAPANEL_H
 
-#include "panel.h"
+#include <gtk/gtk.h>
 #include <string>
 using namespace std;
 
