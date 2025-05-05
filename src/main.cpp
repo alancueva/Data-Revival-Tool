@@ -10,10 +10,8 @@ int main(int argc, char *argv[])
     try
     {
         MetadataRecoveryGUI gui;
-        gui.crear();
         gui.mostrar();
-        gtk_main();
-    
+        gtk_main();   
     }
     catch (const exception &e)
     {
