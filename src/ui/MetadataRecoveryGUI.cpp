@@ -1,50 +1,67 @@
 #include "../../include/ui/MetadataRecoveryGUI.h"
 #include "../../include/core/MetadataRecoveryEngine.h"
+#include "../../include/ui/metadataPanel.h"
+#include "../../include/ui/recoveryPanel.h"
 #include <iostream>
 
 
 MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              m_header_bar(nullptr),
-                                             m_button_header(nullptr),
-                                             m_label(nullptr),
-                                             vbox(nullptr),
-                                             file_entry(nullptr),
-                                             file_button(nullptr),
-                                             file_chooser(nullptr),
-                                             file_label(nullptr),
-                                             file_frame(nullptr),
-                                             file_grid(nullptr),
-                                             scan_combo(nullptr),
-                                             options_grid(nullptr),
-                                             options_frame(nullptr),
-                                             results_vbox(nullptr),
-                                             scroll_window(nullptr),
-                                             file_info_label(nullptr),
-                                             text_view(nullptr),
-                                             progress_bar(nullptr),
-                                             scan_label(nullptr),
-                                             status_label(nullptr),
+                                                m_button_header(nullptr),
+                                            //  m_label(nullptr),
+                                            //  vbox(nullptr),
+                                            //  file_entry(nullptr),
+                                            //  file_button(nullptr),
+                                            //  file_chooser(nullptr),
+                                            //  file_label(nullptr),
+                                            //  file_frame(nullptr),
+                                            //  file_grid(nullptr),
+                                            //  scan_combo(nullptr),
+                                            //  options_grid(nullptr),
+                                            //  options_frame(nullptr),
+                                            //  results_vbox(nullptr),
+                                            //  scroll_window(nullptr),
+                                            //  file_info_label(nullptr),
+                                            //  text_view(nullptr),
+                                            //  progress_bar(nullptr),
+                                            //  scan_label(nullptr),
+                                            //  status_label(nullptr),
+                                            main_container(nullptr),
                                              engine(new MetadataRecoveryEngine()),
-                                             basic_scan_button(nullptr),
-                                             recover_button(nullptr),
-                                             deep_scan_button(nullptr),
-                                             image_filter(nullptr),
-                                             doc_filter(nullptr),
-                                             all_filter(nullptr),
-                                             zip_filter(nullptr)
+                                             metadata_panel(new MetadataPanel()),
+                                             recovery_panel(new RecoveryPanel()),
+                                             current_panel(nullptr)
+                                            //  recover_button(nullptr),
+                                            //  deep_scan_button(nullptr),
+                                            //  image_filter(nullptr),
+                                            //  doc_filter(nullptr),
+                                            //  all_filter(nullptr),
+                                            //  zip_filter(nullptr)
 {
     crear();
+    switch_to_panel(metadata_panel->get_panel());
 }
 
 MetadataRecoveryGUI::~MetadataRecoveryGUI()
 {
-    // Liberar recursos
-    if (engine)
-    {
-        delete engine;
-    }
+    // if (metadata_panel)
+    // {
+    //     delete metadata_panel;
+    // }
+
+    // if (engine)
+    // {
+    //     delete engine;
+    // }
+    // if (recovery_panel)
+    // {
+    //     delete recovery_panel;
+    // }
+
     gtk_widget_destroy(window);
 }
+
+
 
 /**
  * @brief cambia el icono de la ventana principal de la GUI.
@@ -65,21 +82,6 @@ void MetadataRecoveryGUI::cambiar_icono_ventana()
     g_free(dir);
 }
 
-/*
- * @brief Maneja el evento de clic en el botón de archivo.
- * @param widget Puntero al widget que emitió la señal.
- * @param data Datos adicionales (puntero a la instancia de MetadataRecoveryGUI).
- * @return void
- */
-void MetadataRecoveryGUI::on_file_button_clicked(GtkWidget *widget, gpointer data)
-{
-    /**
-     * * Abre el cuadro de diálogo para seleccionar un archivo.
-     * * Al seleccionar un archivo, se carga y analiza el archivo.
-     */
-    static_cast<MetadataRecoveryGUI *>(data)->on_load_file_clicked();
-}
-
 /**
  * @brief Crea la ventana principal de la GUI.
  * @return void
@@ -97,7 +99,6 @@ void MetadataRecoveryGUI::crear()
     // icono de la ventana
     cambiar_icono_ventana();
 
-    // barra de menú
     m_header_bar = gtk_header_bar_new();
     gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(m_header_bar), TRUE);
     gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Herramienta");
@@ -118,32 +119,44 @@ void MetadataRecoveryGUI::crear()
 
     for (int i = 0; i < 2; i++)
     {
+        cout << "Creando botón " << i << ": " << button_labels[i] << endl;
         m_button_header = gtk_button_new_with_label(button_labels[i]);
         gtk_button_set_relief(GTK_BUTTON(m_button_header), GTK_RELIEF_NONE);
         gtk_widget_set_tooltip_text(m_button_header, button_tips[i]);
 
-        // ButtonData *data = new ButtonData{this, i};
-        
-        // g_signal_connect_data(
-        //     m_button_header, 
-        //     "clicked", 
-        //     G_CALLBACK(on_button_clicked), 
-        //     data, 
-        //     [](gpointer data, GClosure *) { delete static_cast<ButtonData*>(data); },
-        //     static_cast<GConnectFlags>(0)
-        // );
-
         gchar *dir = g_get_current_dir();
         gchar *icon_path = g_build_filename(dir, "resources", "icon", button_icons[i], NULL);
-
-        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_path, icon_width, icon_height, TRUE, NULL);
+        GError *error = NULL;
+        GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_path, icon_width, icon_height, TRUE, &error);
         GtkWidget *icon = gtk_image_new_from_pixbuf(pixbuf);
-        gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+        if (error) {
+            g_warning("No se pudo cargar el icono %s: %s", icon_path, error->message);
+            g_error_free(error);
+            // Usar un icono por defecto de GTK
+            if (i == 0) {
+                GtkWidget *icon = gtk_image_new_from_icon_name("document-properties", GTK_ICON_SIZE_BUTTON);
+                gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+            } else {
+                GtkWidget *icon = gtk_image_new_from_icon_name("drive-harddisk", GTK_ICON_SIZE_BUTTON);
+                gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+            }
+        } else {
+            GtkWidget *icon = gtk_image_new_from_pixbuf(pixbuf);
+            gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+            g_object_unref(pixbuf);
+        }
         gtk_button_set_image_position(GTK_BUTTON(m_button_header), GTK_POS_LEFT);
-
         gtk_button_set_always_show_image(GTK_BUTTON(m_button_header), TRUE);
         gtk_button_set_use_underline(GTK_BUTTON(m_button_header), TRUE);
         gtk_header_bar_pack_start(GTK_HEADER_BAR(m_header_bar), m_button_header);
+
+        if (i == 0) {
+            g_signal_connect(m_button_header, "clicked", G_CALLBACK(on_metadata_button_clicked), this);
+        } 
+        else {       
+            g_signal_connect(m_button_header, "clicked", G_CALLBACK(on_recovery_button_clicked), this); 
+        }
+        
 
         if (pixbuf)
             g_object_unref(pixbuf);
@@ -151,10 +164,8 @@ void MetadataRecoveryGUI::crear()
         g_free(dir);
     }
 
-    // Layout principal
-    main_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_container_add(GTK_CONTAINER(window), main_vbox);
-    
+    main_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_container_add(GTK_CONTAINER(window), main_container);    
 }
 
 /**
@@ -165,184 +176,36 @@ void MetadataRecoveryGUI::mostrar()
     gtk_widget_show_all(window);
 }
 
-/**
- * @brief Callback para el evento de cierre de la ventana.
- * @param widget Puntero al widget que emitió la señal.
- * @param data Datos adicionales (no se utilizan en este caso).
- * @return void
- */
-gboolean MetadataRecoveryGUI::on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data)
-{
-    if (event->keyval == GDK_KEY_F11)
-    {
-        static gboolean is_fullscreen = FALSE;
 
-        if (is_fullscreen)
-        {
-            gtk_window_unfullscreen(GTK_WINDOW(window));
-            is_fullscreen = FALSE;
-        }
-        else
-        {
-            gtk_window_fullscreen(GTK_WINDOW(window));
-            is_fullscreen = TRUE;
-        }
 
-        return TRUE;
+void MetadataRecoveryGUI::on_metadata_button_clicked(GtkWidget *widget, gpointer data) {
+    MetadataRecoveryGUI *app = static_cast<MetadataRecoveryGUI*>(data);
+    app->switch_to_panel(app->metadata_panel->get_panel());
+}
+
+void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer data) {
+    MetadataRecoveryGUI *app = static_cast<MetadataRecoveryGUI*>(data);
+    app->switch_to_panel(app->recovery_panel->get_panel());
+}
+
+
+// Metodo por correguir
+// error:  gtk_box_pack: assertion 'GTK_IS_WIDGET (child)' failed
+// error:  gtk_widget_destroy: assertion 'GTK_IS_WIDGET (widget)' failed
+
+void MetadataRecoveryGUI::switch_to_panel(GtkWidget *panel) {
+    cout << "Cambiando a panel: " << (gtk_widget_get_name(panel) ? gtk_widget_get_name(panel) : "unnamed") << endl;
+
+    if (current_panel && GTK_IS_WIDGET(current_panel)) {
+        if (gtk_widget_get_parent(current_panel) == main_container) {
+            gtk_container_remove(GTK_CONTAINER(main_container), current_panel);
+        }
     }
 
-    return FALSE;
-}
+    gtk_box_pack_start(GTK_BOX(main_container), panel, TRUE, TRUE, 0);
 
-/**
- * @brief Establece el contenido del GtkTextView.
- * @param text_view Puntero al GtkTextView.
- * @param content Contenido a establecer.
- * @return void
- */
-void MetadataRecoveryGUI::set_text_view_content(GtkTextView *text_view, const std::string &content)
-{
-    GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
-    gtk_text_buffer_set_text(buffer, content.c_str(), -1);
-}
-
-/**
- * @brief Carga un archivo seleccionado por el usuario y lo analiza.
- * @return void
- */
-void MetadataRecoveryGUI::on_load_file_clicked()
-{
-
-    /**
-     * Abre el cuadro de diálogo para seleccionar un archivo.
-     * Al seleccionar un archivo, se carga y analiza el archivo.
-     */
-    file_chooser = gtk_file_chooser_dialog_new("Abrir Archivo",
-                                               GTK_WINDOW(window),
-                                               GTK_FILE_CHOOSER_ACTION_OPEN,
-                                               "_Cancelar", GTK_RESPONSE_CANCEL,
-                                               "_Abrir", GTK_RESPONSE_ACCEPT,
-                                               NULL);
-
-    // Filtros para tipos de archivos
-    image_filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(image_filter, "Imágenes (*.jpg, *.png, *.tiff, *.bmp)");
-    gtk_file_filter_add_pattern(image_filter, "*.jpg");
-    gtk_file_filter_add_pattern(image_filter, "*.jpeg");
-    gtk_file_filter_add_pattern(image_filter, "*.png");
-    gtk_file_filter_add_pattern(image_filter, "*.tiff");
-    gtk_file_filter_add_pattern(image_filter, "*.bmp");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), image_filter);
-
-    doc_filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(doc_filter, "Documentos (*.pdf, *.doc, *.docx)");
-    gtk_file_filter_add_pattern(doc_filter, "*.pdf");
-    gtk_file_filter_add_pattern(doc_filter, "*.doc");
-    gtk_file_filter_add_pattern(doc_filter, "*.docx");
-    gtk_file_filter_add_pattern(doc_filter, "*.xls");
-    gtk_file_filter_add_pattern(doc_filter, "*.xlsx");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), doc_filter);
-
-    all_filter = gtk_file_filter_new();
-    gtk_file_filter_set_name(all_filter, "Todos los archivos (*)");
-    gtk_file_filter_add_pattern(all_filter, "*");
-    gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(file_chooser), all_filter);
-
-    if (gtk_dialog_run(GTK_DIALOG(file_chooser)) == GTK_RESPONSE_ACCEPT)
-    {
-        char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(file_chooser));
-        gtk_entry_set_text(GTK_ENTRY(file_entry), filename);
-        gtk_label_set_text(GTK_LABEL(status_label), "Estado: Cargando archivo...");
-
-        /**
-         * Simular progreso de carga
-         * Se puede eliminar en la versión final o mejorarlo adaptando segun la carga del archivo.
-         */
-        guint timeout_id = g_timeout_add(50, update_progress_bar_static, this);
-        while (g_main_context_iteration(NULL, FALSE))
-            ;
-
-        // Cargar archivo en el motor
-        if (engine->loadFile(filename))
-        {
-            gtk_label_set_text(GTK_LABEL(status_label), "Estado: Archivo cargado correctamente");
-            gtk_label_set_text(GTK_LABEL(file_info_label), ("Información: " + engine->getFileType(filename)).c_str());
-
-            // Habilitar botones
-            gtk_widget_set_sensitive(basic_scan_button, TRUE);
-            gtk_widget_set_sensitive(recover_button, TRUE);
-            gtk_widget_set_sensitive(deep_scan_button, TRUE);
-
-            // Mostrar metadata básica automáticamente
-            std::string metadata = engine->getBasicMetadata();
-            set_text_view_content(GTK_TEXT_VIEW(text_view), metadata);
-        }
-        else
-        {
-            gtk_label_set_text(GTK_LABEL(status_label), "Estado: Error al cargar el archivo o formato no compatible");
-            show_message_dialog(GTK_WINDOW(window),
-                                "No se pudo analizar el archivo seleccionado o el formato no es compatible.",
-                                GTK_MESSAGE_WARNING);
-        }
-
-        g_source_remove(timeout_id);
-        g_free(filename);
-    }
-
-    gtk_widget_destroy(file_chooser);
-}
-
-gboolean MetadataRecoveryGUI::update_progress_bar_static(gpointer data)
-{
-    return static_cast<MetadataRecoveryGUI *>(data)->update_progress_bar();
-}
-
-/**
- * @brief Actualiza la barra de progreso.
- * @param data Puntero a los datos de la barra de progreso.
- * @return TRUE si la barra de progreso debe seguir actualizándose, FALSE si se debe detener.
- */
-gboolean MetadataRecoveryGUI::update_progress_bar()
-{
-    static int progress = 0;
-    if (progress <= 100)
-    {
-        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress_bar), progress / 100.0);
-        progress += 5;
-        return TRUE;
-    }
-    else
-    {
-        progress = 0;
-        return FALSE;
-    }
-}
-
-/**
- * @brief Muestra un cuadro de diálogo con un mensaje.
- * @param parent Ventana padre del cuadro de diálogo.
- * @param message Mensaje a mostrar.
- * @param type Tipo de mensaje (información, advertencia, error).
- * @return void
- */
-void MetadataRecoveryGUI::show_message_dialog(GtkWindow *parent, const gchar *message, GtkMessageType type)
-{
-    GtkWidget *dialog = gtk_message_dialog_new(parent,
-                                               GTK_DIALOG_DESTROY_WITH_PARENT,
-                                               type,
-                                               GTK_BUTTONS_OK,
-                                               "%s", message);
-    gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
+    current_panel = panel;
+    gtk_widget_show_all(main_container);
 }
 
 
-/*
- * evento de clic en el botón de la barra de menú.
- * @param button Puntero al botón que emitió la señal.
- * @param user_data Datos adicionales (puntero a la instancia de MetadataRecoveryGUI).
- */
-void MetadataRecoveryGUI::on_button_clicked(GtkButton *button, gpointer user_data) {
-    // ButtonData *data = static_cast<ButtonData*>(user_data);
-    // data->window->show_panel(data->panel_index);
-}

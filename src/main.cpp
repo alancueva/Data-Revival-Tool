@@ -4,12 +4,11 @@
 using namespace std;
 
 int main(int argc, char *argv[])
-{
-    gtk_init(&argc, &argv);
-        
+{       
+    gtk_init(&argc, &argv);    
     try
     {
-        MetadataRecoveryGUI gui;
+        MetadataRecoveryGUI gui; // gui.init(argc, argv);
         gui.mostrar();
         gtk_main();   
     }
