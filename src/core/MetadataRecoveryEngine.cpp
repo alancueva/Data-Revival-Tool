@@ -6,70 +6,30 @@
 #include <memory>
 using namespace std;
 
-MetadataRecoveryEngine::MetadataRecoveryEngine() : fileLoaded(false), filePath(""), currentFilePath("") 
+MetadataRecoveryEngine::MetadataRecoveryEngine():
+    fileMetadata(new FileMetadata())
 {
 
 }
 
-
-bool MetadataRecoveryEngine::loadFile(const string &filePath)
+MetadataRecoveryEngine::~MetadataRecoveryEngine()
 {
-    currentFilePath = filePath;
-    fileAnalyzer = MetadataFactory::createAnalyzer(filePath);
-
-    if (!fileAnalyzer)
-    {
-        fileLoaded = false;
-        return false;
-    }
-
-    fileLoaded = fileAnalyzer->analyze();
-    return fileLoaded;
+    delete fileMetadata;
 }
 
-string MetadataRecoveryEngine::getFileType(const filesystem::path& filePath)
-{
-    if (!fileLoaded)
-        return "Ningún archivo cargado";
-    return fileAnalyzer->getFileType(filePath);
+/**
+ * @brief Recupera los metadatos de un archivo dado.
+ * @param filePath Ruta del archivo.
+ * @return string con los metadatos recuperados.
+ * @note Este método utiliza la clase FileMetadata para extraer los metadatos del archivo.
+ */
+string MetadataRecoveryEngine::recoverMetadata(const filesystem::path &filePath){
+
+    // if (!filePath.empty())
+    //     return "Ningún archivo cargado";
+    // if (!filesystem::exists(filePath))
+    //     return "El archivo no existe";
+    string fileType = fileMetadata->extractMetadata(filePath);
+    return fileType;
 }
 
-string MetadataRecoveryEngine::getBasicMetadata() const
-{
-    if (!fileLoaded)
-        return "Ningún archivo cargado";
-    return fileAnalyzer->extractMetadata();
-}
-
-string MetadataRecoveryEngine::recoverDeletedMetadata()
-{
-    if (!fileLoaded)
-        return "Ningún archivo cargado";
-    return fileAnalyzer->recoverOverwrittenMetadata();
-}
-
-string MetadataRecoveryEngine::performDeepScan()
-{
-    if (!fileLoaded)
-        return "Ningún archivo cargado";
-
-    string report = "== ANÁLISIS PROFUNDO ==\n\n";
-    report += "Archivo: " + fileAnalyzer->getFilePath() + "\n";
-    report += "Tipo: " + fileAnalyzer->getFileType(filePath) + "\n\n";
-
-    report += "Metadatos actuales:\n";
-    report += fileAnalyzer->extractMetadata() + "\n\n";
-
-    report += "Metadatos recuperados:\n";
-    report += fileAnalyzer->recoverOverwrittenMetadata() + "\n\n";
-
-    report += "Análisis forense:\n";
-  
-
-    return report;
-}
-
-bool MetadataRecoveryEngine::isFileLoaded() const
-{
-    return fileLoaded;
-}

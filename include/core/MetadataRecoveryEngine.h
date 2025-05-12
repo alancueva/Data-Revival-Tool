@@ -6,23 +6,17 @@
 #include "../../include/metadata/FileMetadata.h"
 using namespace std;
 
+class FileMetadata;
 class MetadataRecoveryEngine
 {
 private:
     unique_ptr<FileMetadata> fileAnalyzer;
-    bool fileLoaded;
-    string currentFilePath;
-    string filePath;
-
+    FileMetadata *fileMetadata;
 public:
     MetadataRecoveryEngine();
+    ~MetadataRecoveryEngine();
 
-    bool loadFile(const string& filePath);
-    string getFileType(const filesystem::path& filePath);
-    string getBasicMetadata() const;
-    string recoverDeletedMetadata();
-    string performDeepScan();
-    bool isFileLoaded() const;
+    string recoverMetadata(const filesystem::path &filePath);
 };
 
 #endif

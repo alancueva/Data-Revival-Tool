@@ -12,43 +12,16 @@
 #include <sys/stat.h>
 using namespace std;
 
-//: filePath(""), isValid(false), fileSize(0)
 FileMetadata::FileMetadata() 
 {
 
 }
 
-// bool FileMetadata::isFileValid() const
-// {
-//     return isValid;
-// }
-
-// string FileMetadata::getFilePath() const
-// {
-//     return filePath;
-// }
-
-// uint64_t FileMetadata::getFileSize() const
-// {
-//     return fileSize;
-// }
-
-// string FileMetadata::getBasicInfo()
-// {
-//     string info = "Ruta: " + filePath + "\n";
-//     info += "Tamaño: " + to_string(fileSize) + " bytes\n";
-//     info += "Tipo: " + getFileType(filePath) + "\n";
-//     return info;
-// }
-
-/**
- * metodo de Simulacion **Corregir**
- */
-bool FileMetadata::analyze()
+FileMetadata::~FileMetadata()
 {
-    // Implementación provisional
-    return true;
+
 }
+
 
 /**
  * @brief Método para analizar el archivo y extraer metadatos.
@@ -83,10 +56,32 @@ string FileMetadata::getFileType(const std::filesystem::path &filePath)
     {
         return "Archivo Comprimido";
     }
-    else if (ext == ".cpp" || ext == ".h" || ext == ".py" || ext == ".js" || ext == ".java" || ext == ".c" || ext == ".cs" || ext == ".go" || ext == ".rb" || ext == ".php" || ext == ".swift" || ext == ".html" || ext == ".css" || ext == ".xml" || ext == ".json" || ext == ".yaml" || ext == ".sql" || ext == ".pl" || ext == ".sh" || ext == ".bash")
+    else if (ext == ".cpp" || ext == ".h" || ext == ".py" || ext == ".js" || ext == ".java" 
+        || ext == ".c" || ext == ".cs" || ext == ".go" || ext == ".rb" || ext == ".php" 
+        || ext == ".swift" || ext == ".xml" 
+        || ext == ".json" || ext == ".yaml" || ext == ".sql" || ext == ".pl" || ext == ".sh" 
+        || ext == ".bash")
     {
         return "Código Fuente";
     }
+    else if (ext == ".html" || ext == ".css" || ext == ".js" 
+        || ext == ".php" || ext == ".asp" || ext == ".jsp")
+    {
+        return "Página Web";
+    }
+    else if (ext == ".iso" || ext == ".img" || ext == ".dmg")
+    {
+        return "Imagen de Disco";
+    }
+    else if (ext == ".log")
+    {
+        return "Archivo de Registro";
+    }
+    else if (ext == ".json")
+    {
+        return "Archivo JSON";
+    }
+    
     else
     {
         return "Desconocido";
@@ -94,37 +89,45 @@ string FileMetadata::getFileType(const std::filesystem::path &filePath)
 }
 
 /**
- * * @brief Extrae los metadatos del archivo.
+ * --------------------------EXTRACION DE METADATA BASICO--------------------------
+ * @brief Extrae los metadatos del archivo.
+ * @param filePath Ruta del archivo.
  * @return string con los metadatos extraídos.
  */
 string FileMetadata::extractMetadata(const std::filesystem::path &filePath)
 {
     string metadata = "== METADATOS EXTRAÍDOS ==\n\n";
-
     metadata += "Nombre del archivo: " + getFileName(filePath) + "\n";
-    // metadata += "Tamaño del archivo: " + to_string(fileSize) + " bytes\n";
+    metadata += "Tamaño del archivo: " + getFileSize(filePath) + "\n";
     metadata += "Extensión del archivo: " + getFileExtension(filePath) + "\n";
-
-    time_t modTime = getFileLastModified(filePath);
-    ostringstream oss;
-    oss << put_time(localtime(&modTime), "%Y-%m-%d %H:%M:%S");
-    string creationDate = oss.str();
-
-    metadata += "Última modificación: " + creationDate + "\n";
+    metadata += "Última modificación: " + getFileLastModifiedstr(filePath) + "\n";
     metadata += "Tipo de archivo: " + getFileType(filePath) + "\n";
     // metadata += "Ruta del archivo: " + filePath + "\n";
-    auto perms = filesystem::status(filePath).permissions();
-    metadata += "Permisos: " + to_string((int)perms) + "\n";
-    metadata += "Tamaño de permisos: " + to_string((int)perms) + "\n";
+    metadata += "Permisos: " + getFilePermissions(filePath) + "\n";
+    // metadata += "Tamaño de permisos: " + getFilePermissions(filePath) + "\n";
     metadata += "Fecha de creación: " + getFileCreationDate(filePath) + "\n";
     return metadata;
 }
 
-string FileMetadata::recoverOverwrittenMetadata()
+
+string FileMetadata::getFileSize(const filesystem::path &filePath)
 {
-    // Implementación provisional
-    return "Metadata recuperada";
+    uintmax_t size = filesystem::file_size(filePath);
+    string sizeStr;
+    const char* units[] = {"bytes", "KB", "MB", "GB", "TB"};
+    int unitIdx = 0;
+    double displaySize = static_cast<double>(size);
+    while (displaySize >= 1024 && unitIdx < 4) {
+        displaySize /= 1024;
+        ++unitIdx;
+    }
+    ostringstream sizeStream;
+    sizeStream.precision(2);
+    sizeStream << fixed << displaySize << " " << units[unitIdx];
+    sizeStr = sizeStream.str();
+    return sizeStr;
 }
+
 
 /**
  * * @brief Obtiene el nombre del archivo a partir de su ruta.
@@ -136,11 +139,19 @@ string FileMetadata::getFileName(const filesystem::path &filePath)
     return filePath.filename().string();
 }
 
+/**
+ * @brief Obtiene la extensión del archivo a partir de su ruta.
+ * @param filePath Ruta del archivo.
+ */
 string FileMetadata::getFileExtension(const filesystem::path &filePath)
 {
     return filePath.extension().string();
 }
 
+/**
+ * @brief Obtiene la fecha de última modificación del archivo.
+ * @param filePath Ruta del archivo.
+ */
 time_t FileMetadata::getFileLastModified(const filesystem::path &filePath)
 {
     filesystem::file_time_type modTime = filesystem::last_write_time(filePath);
@@ -151,7 +162,23 @@ time_t FileMetadata::getFileLastModified(const filesystem::path &filePath)
     return chrono::system_clock::to_time_t(sctp);
 }
 
+/**
+ * @brief Obtiene la fecha de última modificación del archivo como string.
+ * @param filePath Ruta del archivo.
+ */
+string FileMetadata::getFileLastModifiedstr(const filesystem::path &filePath)
+{
+    time_t modTime = getFileLastModified(filePath);
+    ostringstream oss;
+    oss << put_time(localtime(&modTime), "%Y-%m-%d %H:%M:%S");
+    return oss.str();
+}
 
+/**
+ * @brief Obtiene los permisos del archivo.
+ * @param filePath Ruta del archivo.
+ * @return string con los permisos del archivo.
+ */
 string FileMetadata::getFilePermissions(const filesystem::path &filePath)
 {
     error_code ec;
@@ -173,6 +200,10 @@ string FileMetadata::getFilePermissions(const filesystem::path &filePath)
     return oss.str();
 }
 
+/**
+ * @brief Obtiene la fecha de creación del archivo.
+ * @param filePath Ruta del archivo.
+ */
 string FileMetadata::getFileCreationDate(const filesystem::path &filePath)
 {
     struct stat attr;
