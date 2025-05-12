@@ -12,45 +12,34 @@
 #include <sys/stat.h>
 using namespace std;
 
-FileMetadata::FileMetadata(const string &path)
-    : filePath(path), isValid(false), fileSize(0)
+//: filePath(""), isValid(false), fileSize(0)
+FileMetadata::FileMetadata() 
 {
-    //, magic(nullptr)
-    cout << "Creando objeto FileMetadata para el archivo: " << path << endl;
-    ifstream file(path, ios::binary);
-    if (!file)
-    {
-        throw runtime_error("No se puede acceder al archivo: " + path);
-    }
 
-    // Obtener el tamaño del archivo
-    file.seekg(0, ios::end);
-    fileSize = file.tellg();
-    file.seekg(0, ios::beg);
 }
 
-bool FileMetadata::isFileValid() const
-{
-    return isValid;
-}
+// bool FileMetadata::isFileValid() const
+// {
+//     return isValid;
+// }
 
-string FileMetadata::getFilePath() const
-{
-    return filePath;
-}
+// string FileMetadata::getFilePath() const
+// {
+//     return filePath;
+// }
 
-uint64_t FileMetadata::getFileSize() const
-{
-    return fileSize;
-}
+// uint64_t FileMetadata::getFileSize() const
+// {
+//     return fileSize;
+// }
 
-string FileMetadata::getBasicInfo()
-{
-    string info = "Ruta: " + filePath + "\n";
-    info += "Tamaño: " + to_string(fileSize) + " bytes\n";
-    info += "Tipo: " + getFileType(filePath) + "\n";
-    return info;
-}
+// string FileMetadata::getBasicInfo()
+// {
+//     string info = "Ruta: " + filePath + "\n";
+//     info += "Tamaño: " + to_string(fileSize) + " bytes\n";
+//     info += "Tipo: " + getFileType(filePath) + "\n";
+//     return info;
+// }
 
 /**
  * metodo de Simulacion **Corregir**
@@ -108,12 +97,12 @@ string FileMetadata::getFileType(const std::filesystem::path &filePath)
  * * @brief Extrae los metadatos del archivo.
  * @return string con los metadatos extraídos.
  */
-string FileMetadata::extractMetadata()
+string FileMetadata::extractMetadata(const std::filesystem::path &filePath)
 {
     string metadata = "== METADATOS EXTRAÍDOS ==\n\n";
 
     metadata += "Nombre del archivo: " + getFileName(filePath) + "\n";
-    metadata += "Tamaño del archivo: " + to_string(fileSize) + " bytes\n";
+    // metadata += "Tamaño del archivo: " + to_string(fileSize) + " bytes\n";
     metadata += "Extensión del archivo: " + getFileExtension(filePath) + "\n";
 
     time_t modTime = getFileLastModified(filePath);
@@ -123,7 +112,7 @@ string FileMetadata::extractMetadata()
 
     metadata += "Última modificación: " + creationDate + "\n";
     metadata += "Tipo de archivo: " + getFileType(filePath) + "\n";
-    metadata += "Ruta del archivo: " + filePath + "\n";
+    // metadata += "Ruta del archivo: " + filePath + "\n";
     auto perms = filesystem::status(filePath).permissions();
     metadata += "Permisos: " + to_string((int)perms) + "\n";
     metadata += "Tamaño de permisos: " + to_string((int)perms) + "\n";

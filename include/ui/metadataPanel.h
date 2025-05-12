@@ -5,6 +5,12 @@
 #include <string>
 using namespace std;
 
+class FileMetadata;
+
+/**
+ * @brief Clase Panel que representa un panel en la interfaz gráfica de usuario (GUI).
+ * Esta clase es una clase abstracta que define la estructura y comportamiento básico de un panel.
+ * Las clases derivadas de Panel deben implementar los métodos virtuales para crear y gestionar la interfaz de usuario del panel.;
 /**
  * @file MetadataPanel.h
  * @brief Clase MetadataPanel que hereda de Panel.
@@ -14,7 +20,7 @@ using namespace std;
  * Además, permite la visualización y edición de metadatos existentes.
  */
 class MetadataPanel {
-    private:
+private:
     GtkWidget *file_frame;
     GtkWidget *file_grid;
     GtkWidget *file_button;
@@ -37,6 +43,8 @@ class MetadataPanel {
     GtkWidget *file_entry;
     GtkWidget *text_view;
     
+    FileMetadata *file_metadata;
+
     void create_file_selection_section();
     void create_results_section();
 

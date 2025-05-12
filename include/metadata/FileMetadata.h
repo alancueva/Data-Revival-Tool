@@ -14,36 +14,27 @@ using namespace std;
 
 class FileMetadata
 {
-private:
-    string filePath;
-    bool isValid;
-    uint64_t fileSize;
-
-    // magic_t magic;
-
-public:
+    public:
     /**
      * @brief Constructor de la clase FileMetadata.
      * @param path Ruta al archivo a analizar.
+     * const string &path
      */
-    FileMetadata(const string &path);
+    FileMetadata();
     /*
      * @brief Destructor of the FileMetadata class.
      */
     // ~FileMetadata();
 
-    bool isFileValid() const;
-    string getFilePath() const;
-    uint64_t getFileSize() const;
-    string getBasicInfo();
 
     bool analyze();
     /**
      * @brief Extrae los metadatos del archivo.
      * @return string con los metadatos extraídos.
      */
-    string extractMetadata();
+    string extractMetadata(const filesystem::path& filePath);
     string recoverOverwrittenMetadata();
+
 
     /**
      * @brief Método para analizar el archivo y extraer metadatos.
