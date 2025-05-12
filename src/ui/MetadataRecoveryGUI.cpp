@@ -7,36 +7,12 @@
 
 MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
                                              m_header_bar(nullptr),
-                                                m_button_header(nullptr),
-                                            //  m_label(nullptr),
-                                            //  vbox(nullptr),
-                                            //  file_entry(nullptr),
-                                            //  file_button(nullptr),
-                                            //  file_chooser(nullptr),
-                                            //  file_label(nullptr),
-                                            //  file_frame(nullptr),
-                                            //  file_grid(nullptr),
-                                            //  scan_combo(nullptr),
-                                            //  options_grid(nullptr),
-                                            //  options_frame(nullptr),
-                                            //  results_vbox(nullptr),
-                                            //  scroll_window(nullptr),
-                                            //  file_info_label(nullptr),
-                                            //  text_view(nullptr),
-                                            //  progress_bar(nullptr),
-                                            //  scan_label(nullptr),
-                                            //  status_label(nullptr),
+                                            m_button_header(nullptr),
                                             main_container(nullptr),
                                              engine(new MetadataRecoveryEngine()),
                                              metadata_panel(new MetadataPanel()),
                                              recovery_panel(new RecoveryPanel()),
                                              current_panel(nullptr)
-                                            //  recover_button(nullptr),
-                                            //  deep_scan_button(nullptr),
-                                            //  image_filter(nullptr),
-                                            //  doc_filter(nullptr),
-                                            //  all_filter(nullptr),
-                                            //  zip_filter(nullptr)
 {
     crear();
     switch_to_panel(metadata_panel->get_panel());
@@ -44,19 +20,23 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
 
 MetadataRecoveryGUI::~MetadataRecoveryGUI()
 {
-    // if (metadata_panel)
-    // {
-    //     delete metadata_panel;
-    // }
+    if (metadata_panel)
+    {
+        delete metadata_panel;
+        metadata_panel = nullptr;
+    }
 
-    // if (engine)
-    // {
-    //     delete engine;
-    // }
-    // if (recovery_panel)
-    // {
-    //     delete recovery_panel;
-    // }
+    if (engine)
+    {
+        delete engine;
+        engine = nullptr;
+    }
+
+    if (recovery_panel)
+    {
+        delete recovery_panel;
+        recovery_panel = nullptr;
+    }
 
     gtk_widget_destroy(window);
 }
@@ -189,19 +169,23 @@ void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer
 }
 
 
-// Metodo por correguir
-// error:  gtk_box_pack: assertion 'GTK_IS_WIDGET (child)' failed
-// error:  gtk_widget_destroy: assertion 'GTK_IS_WIDGET (widget)' failed
-
+/**
+ * @brief Cambia el panel actual de la GUI.
+ * @param panel El panel a mostrar.
+ * @return void
+ * @note Esta función se utiliza para cambiar el panel actual de la GUI.
+ * @note El panel actual se elimina de la ventana principal y se agrega el nuevo panel.
+ */
 void MetadataRecoveryGUI::switch_to_panel(GtkWidget *panel) {
     cout << "Cambiando a panel: " << (gtk_widget_get_name(panel) ? gtk_widget_get_name(panel) : "unnamed") << endl;
 
     if (current_panel && GTK_IS_WIDGET(current_panel)) {
-        if (gtk_widget_get_parent(current_panel) == main_container) {
+        GtkWidget* parent = gtk_widget_get_parent(current_panel);
+        if (parent == main_container) {
             gtk_container_remove(GTK_CONTAINER(main_container), current_panel);
         }
     }
-
+    g_object_ref(panel);
     gtk_box_pack_start(GTK_BOX(main_container), panel, TRUE, TRUE, 0);
 
     current_panel = panel;
