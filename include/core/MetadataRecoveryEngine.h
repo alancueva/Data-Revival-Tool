@@ -3,15 +3,18 @@
 
 #include <memory>
 #include <string>
-#include "../../include/metadata/FileMetadata.h"
+#include <filesystem>
+#include <future>
+#include "FileEngine.h"
+
 using namespace std;
 
-class FileMetadata;
 class MetadataRecoveryEngine
 {
-private:
-    unique_ptr<FileMetadata> fileAnalyzer;
-    FileMetadata *fileMetadata;
+private: 
+    unique_ptr<FileEngine> fileEngine;
+    string filePath;
+    string routeImage(const filesystem::path &filePath);
 public:
     MetadataRecoveryEngine();
     ~MetadataRecoveryEngine();

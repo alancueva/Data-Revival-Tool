@@ -1,35 +1,52 @@
 
-#include "../../include/metadata/FileMetadata.h"
-#include "../../include/metadata/MetadataFactory.h"
 #include "../../include/core/MetadataRecoveryEngine.h"
+#include "../../include/core/FileEngine.h"
 #include <string>
+#include <iostream>
 #include <memory>
+#include <filesystem>
+#include <future>
+#include <algorithm>
+#include <cctype>
+
 using namespace std;
 
-MetadataRecoveryEngine::MetadataRecoveryEngine():
-    fileMetadata(new FileMetadata())
+MetadataRecoveryEngine::MetadataRecoveryEngine()
 {
-
+    fileEngine = make_unique<FileEngine>();
+    filePath = "";
 }
 
-MetadataRecoveryEngine::~MetadataRecoveryEngine()
-{
-    delete fileMetadata;
+MetadataRecoveryEngine::~MetadataRecoveryEngine() = default;
+
+/**
+ * @brief Ruta de la imagen.
+ * @param filePath Ruta de la imagen.
+ * @return string con la ruta de la imagen.
+ */
+string MetadataRecoveryEngine::routeImage(const filesystem::path &filePath) {
+    this->filePath = filePath.string();
+    return this->filePath;
 }
 
 /**
  * @brief Recupera los metadatos de un archivo dado.
  * @param filePath Ruta del archivo.
  * @return string con los metadatos recuperados.
- * @note Este método utiliza la clase FileMetadata para extraer los metadatos del archivo.
+ * @note Este método utiliza la clase FileEngine para extraer los metadatos del archivo.
  */
 string MetadataRecoveryEngine::recoverMetadata(const filesystem::path &filePath){
-
-    // if (!filePath.empty())
-    //     return "Ningún archivo cargado";
-    // if (!filesystem::exists(filePath))
-    //     return "El archivo no existe";
-    string fileType = fileMetadata->extractMetadata(filePath);
-    return fileType;
+    string routestr = routeImage(filePath);
+    try {
+        auto future = fileEngine->processFileAsync(routestr);
+        // Esto puede lanzar una excepción si ocurre algo en processFile
+        // Por ejemplo, si el archivo no se puede abrir.
+        // Si esto ocurre, el catch manejará la excepción y devolverá un mensaje de error.
+        string resultado = future.get(); 
+        return resultado.c_str();
+    } catch (const exception& e) {
+        std::cerr << "Error al recuperar metadatos: " << e.what() << std::endl;
+        return "Error en recuperación de metadatos";
+    }
 }
 

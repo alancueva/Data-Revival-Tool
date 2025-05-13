@@ -1,0 +1,116 @@
+#include "../../include/core/FileEngine.h"
+#include "../../include/metadata/ImageMetadata.h"
+#include <fstream>
+#include <vector>
+#include <algorithm>
+#include <string>
+#include <iostream>
+#include <filesystem>
+#include <future>
+#include <algorithm>
+#include <cctype>
+
+using namespace std;
+
+FileEngine::FileEngine(){
+    imageMetadata = make_unique<ImageMetadata>();
+    filePath = "";
+}
+
+FileEngine::~FileEngine()=default;
+
+
+/**
+ * 
+ * @brief Método para analizar el tipo de archivo.
+ * @param filePath Ruta del archivo a analizar.
+ * @return string con el tipo de archivo.
+ */
+string FileEngine::getFileType(const filesystem::path& filePath) {
+    string ext = filePath.extension().string();
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    if (ext == ".txt" || ext == ".doc" || ext == ".docx" || ext == ".pdf" || ext == ".xls" || 
+        ext == ".xlsx" || ext == ".ppt" || ext == ".pptx" || ext == ".csv" || ext == ".xml") {
+        return "Documento";
+    } else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".bmp") {
+        return "Imagen";
+    } else if (ext == ".mp3" || ext == ".wav" || ext == ".ogg" || ext == ".flac" || ext == ".aac") {
+        return "Audio";
+    } else if (ext == ".mp4" || ext == ".avi" || ext == ".mov" || ext == ".mkv" || ext == ".wmv" ||
+         ext == ".flv" || ext == ".webm") {
+        return "Video";
+    } else if (ext == ".exe" || ext == ".bin" || ext == ".dll" || ext == ".so" || ext == ".app") {
+        return "Ejecutable";
+    } else if (ext == ".zip" || ext == ".rar" || ext == ".tar" || ext == ".gz") {
+        return "Archivo Comprimido";
+    } else if (ext == ".cpp" || ext == ".h" || ext == ".py" || ext == ".js" || ext == ".java"
+               || ext == ".c" || ext == ".cs" || ext == ".go" || ext == ".rb" || ext == ".php"
+               || ext == ".swift" || ext == ".xml"
+               || ext == ".json" || ext == ".yaml" || ext == ".sql" || ext == ".pl" || ext == ".sh"
+               || ext == ".bash") {
+        return "Código Fuente";
+    } else if (ext == ".html" || ext == ".css" || ext == ".js"
+               || ext == ".php" || ext == ".asp" || ext == ".jsp") {
+        return "Página Web";
+    } else if (ext == ".iso" || ext == ".img" || ext == ".dmg") {
+        return "Imagen de Disco";
+    } else if (ext == ".log") {
+        return "Archivo de Registro";
+    } else if (ext == ".json") {
+        return "Archivo JSON";
+    } else {
+        return "Desconocido";
+    }
+}
+
+/**
+ *------------------ METODO DE PROCESAMIENTO DE ARCHIVOS------------------
+ * @brief Método para procesar el archivo.
+ * @param filePath Ruta del archivo a procesar.
+ * @return string con el resultado del procesamiento.
+ */
+string FileEngine::processFile(const string& filePath) {
+    filesystem::path path(filePath);
+    string fileType = getFileType(path);
+    ifstream file(filePath, ios::binary);
+    stringstream lstdata;
+    if (file.is_open()) {
+        if (fileType == "Imagen") {
+            cout << "Procesando imagen: " << filePath << endl;
+            lstdata << imageMetadata->extractMetadataImg(filePath);
+        } else if (fileType == "Audio") {
+            
+        }
+        else {            
+        }
+        file.close();
+    } else {
+        lstdata << "Error abir archivo: " << filePath << endl;
+    }
+    return lstdata.str();
+}
+
+/**
+ * @brief Método para procesar el archivo de forma asíncrona.
+ * @param filePath Ruta del archivo a procesar.
+ * @return future<string> con el resultado del procesamiento.
+ * 
+ * @details
+ * - future<string>: Representa un valor que estará disponible en el futuro. Se utiliza para operaciones asíncronas
+ *   donde el resultado no está disponible inmediatamente sino que se calculará más tarde.
+ * 
+ * - async: Una plantilla de función que ejecuta una función de forma asíncrona (potencialmente en un hilo separado),
+ *   y devuelve un future que eventualmente contendrá el resultado de esa función.
+ * 
+ * - async(launch::async, [this, filePath]()):
+ *   - launch::async fuerza la operación a ejecutarse en un nuevo hilo
+ *   - [this, filePath]() es una función lambda que captura:
+ *     - puntero 'this' para acceder a los miembros de la clase
+ *     - parámetro filePath para pasar a processFile
+ */
+future<string> FileEngine::processFileAsync(const string& filePath) {
+    return async(launch::async, [this, filePath]() {
+        return this->processFile(filePath);
+    });
+}
