@@ -170,7 +170,7 @@ void MetadataPanel::on_analyze_button_clicked(GtkWidget *widget, gpointer data)
         gchar *metadata = g_strdup_printf(
             "%s: %s",
             tipo.c_str(),
-            filepath);
+            "");
 
         gtk_text_buffer_set_text(buffer, metadata, -1);
         g_free(metadata);
