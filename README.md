@@ -23,3 +23,18 @@ Para compilar y ejecutar aplicaciones C++ con GTK3 en Windows, sigue estos pasos
    ```
 
 Esto instalará las bibliotecas necesarias para desarrollar aplicaciones gráficas en C++ usando GTK3 y la herramienta `pkg-config` en el entorno MSYS2.
+
+4. **Ejecutar el programa**  
+   Una vez instalado todo lo necesario, sigue estos pasos para compilar y ejecutar el programa:
+   ```
+   cd build
+   cmake --build .
+   cd ..
+   bin/metadata_recovery.exe
+   ```
+
+   Estos comandos:
+   - Entran al directorio de compilación
+   - Compilan el proyecto usando CMake
+   - Vuelven al directorio principal
+   - Ejecutan el programa compilado
