@@ -1,40 +1,57 @@
-# Instalación de MSYS2 y GTK3 para C++
-Para compilar y ejecutar aplicaciones C++ con GTK3 en Windows, sigue estos pasos:
+# Data Revival Tool
 
-1. **Descarga e instala MSYS2**  
-   Ve a [https://www.msys2.org](https://www.msys2.org) y descarga el instalador adecuado para tu sistema operativo. Sigue las instrucciones de la página para completar la instalación.
+---
 
-2. **Actualiza los paquetes base**  
-   Abre la terminal de MSYS2 (puedes buscar "MSYS2 MSYS" en el menú de inicio) y ejecuta el siguiente comando para actualizar el sistema:
-   ```
-   pacman -Syu
-   ```
+## ⚙️ Instalación en Windows
 
-3. **Instala GTK3 para C++ y pkg-config**  
-   Una vez actualizado el sistema, instala los paquetes necesarios ejecutando:
-   ```
-   pacman -S mingw-w64-x86_64-gtk3
-   pacman -S pkg-config
-   pacman -S mingw-w64-x86_64-gcc
+### 1. Instalar MSYS2
+- Descarga el instalador desde [msys2.org](https://www.msys2.org) y sigue las instrucciones de la página.
 
-   pacman -S mingw-w64-x86_64-cmake
+### 2. Actualizar Paquetes Base
+Abre la terminal de MSYS2 y ejecuta:
+```sh
+pacman -Syu
+```
 
-   pacman -S mingw-w64-x86_64-file
-   ```
+### 3. Instalar Dependencias
+Ejecuta los siguientes comandos en la terminal de MSYS2:
+```sh
+pacman -S mingw-w64-x86_64-gtk3 \
+           pkg-config \
+           mingw-w64-x86_64-gcc \
+           mingw-w64-x86_64-cmake \
+           mingw-w64-x86_64-file
+```
+Esto instalará las bibliotecas necesarias para desarrollar aplicaciones gráficas en C++ usando GTK3 y la herramienta `pkg-config`.
 
-Esto instalará las bibliotecas necesarias para desarrollar aplicaciones gráficas en C++ usando GTK3 y la herramienta `pkg-config` en el entorno MSYS2.
+### 4. Compilar y Ejecutar el Programa
+```sh
+cd build
+cmake --build .
+cd ..
+bin/metadata_recovery.exe
+```
+- Entra al directorio de compilación
+- Compila el proyecto usando CMake
+- Vuelve al directorio principal
+- Ejecuta el programa compilado
 
-4. **Ejecutar el programa**  
-   Una vez instalado todo lo necesario, sigue estos pasos para compilar y ejecutar el programa:
-   ```
-   cd build
-   cmake --build .
-   cd ..
-   bin/metadata_recovery.exe
-   ```
+---
 
-   Estos comandos:
-   - Entran al directorio de compilación
-   - Compilan el proyecto usando CMake
-   - Vuelven al directorio principal
-   - Ejecutan el programa compilado
+## 🐧 Instalación en Linux (Fedora)
+
+### 1. Instalar Dependencias
+```sh
+sudo dnf install gcc-c++ cmake pkgconf gtk3-devel
+```
+
+### 2. Compilar y Ejecutar
+```sh
+cd build
+cmake ..
+cmake --build .
+cd ..
+./bin/metadata_recovery
+```
+
+> **Nota:** Asegúrate de tener las dependencias instaladas antes de compilar el proyecto.
