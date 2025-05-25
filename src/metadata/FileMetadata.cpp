@@ -26,6 +26,12 @@ FileMetadata::~FileMetadata()
 /**
  * @brief Método para analizar el archivo y extraer metadatos.
  * @return string con los metadatos extraídos.
+ * @note
+    Este archivo implementa la clase y métodos relacionados con la obtención de metadatos de archivos.
+    En particular, el método getFileType se utiliza para identificar el tipo de archivo (por ejemplo, texto, imagen, binario, etc.).
+    Esta identificación permite que, en otras partes del proyecto, se puedan delegar las operaciones específicas de cada tipo de archivo
+    a implementaciones especializadas y separadas. Así, cada tipo de archivo será gestionado por su propia clase o módulo,
+    promoviendo la modularidad y facilitando el mantenimiento y la extensión del sistema.
  */
 string FileMetadata::getFileType(const std::filesystem::path &filePath)
 {
