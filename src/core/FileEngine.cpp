@@ -14,6 +14,7 @@ using namespace std;
 
 FileEngine::FileEngine(){
     imageMetadata = make_unique<ImageMetadata>();
+    documentMetadata = make_unique<DocumentMetadata>();
     filePath = "";
 }
 
@@ -79,14 +80,15 @@ string FileEngine::processFile(const string& filePath) {
         if (fileType == "Imagen") {
             cout << "Procesando imagen: " << filePath << endl;
             lstdata << imageMetadata->extractMetadataImg(filePath);
-        } else if (fileType == "Audio") {
-            
+        } else if (fileType == "Documento") {
+            lstdata << documentMetadata->getAllMetadata(filePath);
         }
-        else {            
+        else {
+            lstdata << "Tipo de archivo no soportado: " << fileType << endl;
         }
         file.close();
     } else {
-        lstdata << "Error abir archivo: " << filePath << endl;
+        lstdata << "Error abrir archivo: " << filePath << endl;
     }
     return lstdata.str();
 }

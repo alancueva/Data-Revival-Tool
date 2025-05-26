@@ -8,12 +8,14 @@
 #include <memory>
 #include <future>
 #include "../metadata/ImageMetadata.h"
+#include "../metadata/DocumentMetadata.h"
 
 using namespace std;
 
 class FileEngine {
 private:
     unique_ptr<ImageMetadata> imageMetadata;
+    unique_ptr<DocumentMetadata> documentMetadata;
     string filePath;
     string getFileType(const filesystem::path& filePath);
     string processFile(const string& filePath);
