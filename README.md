@@ -27,6 +27,7 @@ Esto instalará las bibliotecas necesarias para desarrollar aplicaciones gráfic
 ### 4. Compilar y Ejecutar el Programa
 ```sh
 cd build
+cmake ..
 cmake --build .
 cd ..
 bin/metadata_recovery.exe
