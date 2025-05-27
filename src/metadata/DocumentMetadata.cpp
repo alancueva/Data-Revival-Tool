@@ -13,7 +13,10 @@ DocumentMetadata::DocumentMetadata()
     m_metadata["file_name"] = "";
     m_metadata["file_extension"] = "";
 }
-DocumentMetadata::~DocumentMetadata() = default;
+DocumentMetadata::~DocumentMetadata(){
+    m_fileHeader.clear();
+    m_metadata.clear();
+};
 
 string DocumentMetadata::routeImage(const filesystem::path &filePath)
 {

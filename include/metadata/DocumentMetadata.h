@@ -16,7 +16,7 @@ class DocumentMetadata
 {
 public:
     DocumentMetadata();
-    ~DocumentMetadata() = default;
+    ~DocumentMetadata();
 
     /**
      * @brief Metodo para extraer los metadatos del documento.
@@ -99,7 +99,7 @@ private:
      * @param bytes Vector de bytes a convertir.
      * @return string con la representación hexadecimal de los bytes.
      */
-    string bytesToHex(const std::vector<uint8_t>& bytes) const ;
+    string bytesToHex(const vector<uint8_t>& bytes) const ;
 
     /**
      * @brief Método para detectar el tipo MIME del archivo.
