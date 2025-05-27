@@ -1,12 +1,14 @@
 #ifndef IMAGEMETADATA_H
 #define IMAGEMETADATA_H
 
-#include "FileMetadata.h"
 #include <string>
 #include <vector>
 #include <cstdint>
 #include <iostream>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
+
 
 using namespace std;
 
