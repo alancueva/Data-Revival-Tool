@@ -104,6 +104,8 @@ private:
     /**
      * @brief Método para detectar el tipo MIME del archivo.
      * @return string con el tipo MIME del archivo.
+     * @note El tipo MIME es un estándar que describe el formato de un archivo.
+     * Se utiliza para identificar el tipo de contenido de un documento, archivo o conjunto de bytes.
      */
     string detectMimeType() const;
 };
