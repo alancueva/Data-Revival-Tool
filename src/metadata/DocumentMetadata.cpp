@@ -13,10 +13,8 @@ DocumentMetadata::DocumentMetadata()
     m_metadata["file_name"] = "";
     m_metadata["file_extension"] = "";
 }
-DocumentMetadata::~DocumentMetadata()
-{
-    // Destructor por defecto
-}
+DocumentMetadata::~DocumentMetadata() = default;
+
 string DocumentMetadata::routeImage(const filesystem::path &filePath)
 {
     this->m_filePath = filePath.string();

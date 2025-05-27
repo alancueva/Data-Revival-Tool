@@ -16,7 +16,7 @@ class DocumentMetadata
 {
 public:
     DocumentMetadata();
-    ~DocumentMetadata();
+    ~DocumentMetadata() = default;
 
     /**
      * @brief Metodo para extraer los metadatos del documento.
@@ -50,8 +50,15 @@ private:
      */
     map<std::string, std::string> m_metadata;
 
+    /**
+     * @brief Se usara para almacenar los encabezados del archivo.
+     */
     vector<uint8_t> m_fileHeader;
 
+    /**
+     * @brief Método para leer el encabezado del archivo.
+     * @note Este método lee los primeros bytes del archivo para analizar su firma y tipo.
+     */
     void readFileHeader();
 
     /**
@@ -81,8 +88,23 @@ private:
      */
     string getFileTypeExtension() const;
 
+    /**
+     * @brief Método para analizar la firma del archivo.
+     * @note Este método examina la firma del archivo para identificar su tipo.
+     */
     void analyzeFileSignature();
+
+    /**
+     * @brief Método para convertir un vector de bytes a una cadena hexadecimal.
+     * @param bytes Vector de bytes a convertir.
+     * @return string con la representación hexadecimal de los bytes.
+     */
     string bytesToHex(const std::vector<uint8_t>& bytes) const ;
+
+    /**
+     * @brief Método para detectar el tipo MIME del archivo.
+     * @return string con el tipo MIME del archivo.
+     */
     string detectMimeType() const;
 };
 
