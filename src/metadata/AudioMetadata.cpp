@@ -3,184 +3,248 @@
 #include <sstream>
 using namespace std;
 
-AudioMetadata::AudioMetadata(const string& path) 
-    : FileMetadata(path), sampleRate(0), bitRate(0), channels(0), duration(0) {
+AudioMetadata::AudioMetadata() {
+    filePath = "";
 }
 
-bool AudioMetadata::analyze() {
-    ifstream file(filePath, ios::binary);
-    if (!file) return false;
-    
-    fileHeader.resize(16);
-    file.read(reinterpret_cast<char*>(fileHeader.data()), 16);
-    
-    // Identificar formato de audio basado en la cabecera
-    if (fileHeader[0] == 0x49 && fileHeader[1] == 0x44 && fileHeader[2] == 0x33) {
-        audioFormat = "MP3 (ID3)";
-        isValid = analyzeMP3(file);
-    } else if (fileHeader[0] == 0xFF && (fileHeader[1] & 0xF0) == 0xF0) {
-        audioFormat = "MP3";
-        isValid = analyzeMP3(file);
-    } else if (fileHeader[0] == 0x52 && fileHeader[1] == 0x49 && 
-               fileHeader[2] == 0x46 && fileHeader[3] == 0x46) {
-        // Comprobamos si es un WAV (RIFF + WAVE)
-        if (fileHeader[8] == 0x57 && fileHeader[9] == 0x41 && 
-            fileHeader[10] == 0x56 && fileHeader[11] == 0x45) {
-            audioFormat = "WAV";
-            isValid = analyzeWAV(file);
-        } else {
-            audioFormat = "Desconocido (RIFF)";
-            isValid = false;
-        }
-    } else if ((fileHeader[0] == 0x4F && fileHeader[1] == 0x67 && 
-                fileHeader[2] == 0x67 && fileHeader[3] == 0x53)) {
-        audioFormat = "OGG";
-        isValid = analyzeOGG(file);
-    } else if (fileHeader[4] == 0x66 && fileHeader[5] == 0x74 && 
-               fileHeader[6] == 0x79 && fileHeader[7] == 0x70) {
-        audioFormat = "M4A/AAC";
-        isValid = analyzeM4A(file);
+AudioMetadata::~AudioMetadata(){
+    m_fileHeader.clear();
+    m_metadata.clear();
+};
+
+string AudioMetadata::routeAudio(const filesystem::path &filePath) {
+    this->filePath = filePath.string();
+    return this->filePath;
+}
+
+string AudioMetadata::getAllMetadata(const filesystem::path &filePath) {
+    routeAudio(filePath);
+    readFileHeader();
+    analyzeAudioFormat();
+    ostringstream oss;
+    oss << "=== Audio Metadata ===\n";
+    oss << "File Path: " << filePath.string() << "\n";
+    oss << "Format: " << getFormat() << "\n";
+    oss << "Title: " << getTitle() << "\n";
+    oss << "Artist: " << getArtist() << "\n";
+    oss << "Album: " << getAlbum() << "\n";
+    oss << "Duration: " << getDuration() << "\n";
+    oss << "Bitrate: " << getBitrate() << "\n";
+    oss << "Sample Rate: " << getSampleRate() << "\n";
+    oss << "Channels: " << getChannels() << "\n";
+    return oss.str();
+}
+
+string AudioMetadata::getTitle() const {
+    auto it = m_metadata.find("title");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getDuration() const {
+    auto it = m_metadata.find("duration");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getArtist() const {
+    auto it = m_metadata.find("artist");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getAlbum() const {
+    auto it = m_metadata.find("album");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getBitrate() const {
+    auto it = m_metadata.find("bitrate");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getSampleRate() const {
+    auto it = m_metadata.find("sample_rate");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getFormat() const {
+    auto it = m_metadata.find("format");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+string AudioMetadata::getChannels() const {
+    auto it = m_metadata.find("channels");
+    return (it != m_metadata.end()) ? it->second : "Unknown";
+}
+
+/**
+ * @brief Método para detectar el formato de audio basado en la firma del archivo.
+ * @note Este método analiza los primeros bytes del archivo para determinar su formato.
+ */
+void AudioMetadata::readFileHeader() {
+    ifstream file(filePath, std::ios::binary);
+    if (!file.is_open()) return;
+
+    // Leer primeros 256 bytes para análisis
+    m_fileHeader.resize(256);
+    file.read(reinterpret_cast<char *>(m_fileHeader.data()), 256);
+    m_fileHeader.resize(file.gcount());
+
+    file.close();
+}
+
+
+void AudioMetadata::analyzeAudioFormat(){
+    // if (m_fileHeader.size() < 12) return;
+
+    string format = detectAudioFormat();
+    m_metadata["format"] = format;
+
+    if (format == "MP3") {
+        extractMP3Metadata();
+        extractID3Tags();
+    } else if (format == "WAV") {
+        // extractWAVMetadata();
     } else {
-        audioFormat = "Formato de audio desconocido";
-        isValid = false;
+        
     }
-    
-    return isValid;
 }
 
-string AudioMetadata::getFileType() const {
-    return "Audio - " + audioFormat;
+string AudioMetadata:: detectAudioFormat() {
+    // if (m_fileHeader.size() < 12) return;
+
+    if ((m_fileHeader[0] == 0xFF && (m_fileHeader[1] & 0xE0) == 0xE0) ||
+        (m_fileHeader[0] == 'I' && m_fileHeader[1] == 'D' && m_fileHeader[2] == '3')) {
+        return "MP3";
+    }
+    
+
+    return "";
 }
 
-string AudioMetadata::extractMetadata() {
-    if (!isValid) return "Archivo no válido o no es un audio compatible";
-    
-    stringstream metadata;
-    metadata << "== METADATOS DE AUDIO ==\n\n";
-    metadata << "Formato: " << audioFormat << "\n";
-    
-    if (duration > 0) {
-        int minutes = duration / 60;
-        int seconds = duration % 60;
-        metadata << "Duración: " << minutes << ":" << (seconds < 10 ? "0" : "") << seconds << "\n";
+void AudioMetadata::extractMP3Metadata() {
+    // Buscar frame header MP3
+    for (size_t i = 0; i < m_fileHeader.size() - 4; ++i) {
+        if (m_fileHeader[i] == 0xFF && (m_fileHeader[i + 1] & 0xE0) == 0xE0) {
+            uint8_t header[4] = {m_fileHeader[i], m_fileHeader[i + 1], 
+                                m_fileHeader[i + 2], m_fileHeader[i + 3]};
+            
+            // Extraer información del frame header
+            int version = (header[1] >> 3) & 0x03;
+            int layer = (header[1] >> 1) & 0x03;
+            int bitrate_index = (header[2] >> 4) & 0x0F;
+            int sample_rate_index = (header[2] >> 2) & 0x03;
+            int channel_mode = (header[3] >> 6) & 0x03;
+            
+            // Tabla de bitrates para MPEG-1 Layer III
+            int bitrates[] = {0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0};
+            int sample_rates[] = {44100, 48000, 32000, 0};
+            
+            if (bitrate_index > 0 && bitrate_index < 15) {
+                m_metadata["bitrate"] = to_string(bitrates[bitrate_index]) + " kbps";
+            }
+            
+            if (sample_rate_index < 3) {
+                m_metadata["sample_rate"] = to_string(sample_rates[sample_rate_index]) + " Hz";
+            }
+            
+            m_metadata["channels"] = (channel_mode == 3) ? "1 (Mono)" : "2 (Stereo)";
+            
+            // Calcular duración aproximada
+            if (bitrate_index > 0 && bitrate_index < 15) {
+                auto file_size = filesystem::file_size(filePath);
+                uint32_t duration_seconds = (file_size * 8) / (bitrates[bitrate_index] * 1000);
+                m_metadata["duration"] = formatDuration(duration_seconds);
+            }
+            
+            break;
+        }
     }
-    
-    if (sampleRate > 0) {
-        metadata << "Frecuencia de muestreo: " << sampleRate << " Hz\n";
-    }
-    
-    if (bitRate > 0) {
-        metadata << "Tasa de bits: " << bitRate << " kbps\n";
-    }
-    
-    if (channels > 0) {
-        metadata << "Canales: " << channels << " (" << (channels == 1 ? "Mono" : "Estéreo") << ")\n";
-    }
-    
-    if (!title.empty()) {
-        metadata << "Título: " << title << "\n";
-    }
-    
-    if (!artist.empty()) {
-        metadata << "Artista: " << artist << "\n";
-    }
-    
-    if (!album.empty()) {
-        metadata << "Álbum: " << album << "\n";
-    }
-    
-    if (!year.empty()) {
-        metadata << "Año: " << year << "\n";
-    }
-    
-    if (!genre.empty()) {
-        metadata << "Género: " << genre << "\n";
-    }
-    
-    return metadata.str();
 }
 
-string AudioMetadata::recoverOverwrittenMetadata() {
-    if (!isValid) return "No se puede recuperar metadata de un archivo no válido";
+string AudioMetadata::formatDuration(uint32_t seconds) const {
+    uint32_t hours = seconds / 3600;
+    uint32_t minutes = (seconds % 3600) / 60;
+    uint32_t secs = seconds % 60;
     
-    stringstream recoveredData;
-    recoveredData << "== METADATOS RECUPERADOS ==\n\n";
-    
-    // Simulación de recuperación de metadatos
-    if (audioFormat.find("MP3") != string::npos) {
-        recoveredData << "Metadatos originales recuperados:\n";
-        recoveredData << "- Etiquetas ID3v1 originales:\n";
-        recoveredData << "  * Título original: \"" << (title.empty() ? "Demo - Sin título" : "Versión previa de " + title) << "\"\n";
-        recoveredData << "  * Artista original: \"Estudio de grabación\"\n";
-        recoveredData << "- Comentarios eliminados: \"Versión preliminar\"\n";
-        recoveredData << "- Fecha de grabación: 05/02/2023\n";
-    } else if (audioFormat == "WAV") {
-        recoveredData << "Metadatos originales recuperados:\n";
-        recoveredData << "- Pistas múltiples mezcladas: 3 pistas originales\n";
-        recoveredData << "- Software de edición: Audacity 3.0\n";
-        recoveredData << "- Marcadores de tiempo eliminados: 5 marcadores\n";
-    } else if (audioFormat == "M4A/AAC") {
-        recoveredData << "Metadatos originales recuperados:\n";
-        recoveredData << "- Datos de geolocalización: 52.5200° N, 13.4050° E\n";
-        recoveredData << "- Dispositivo de grabación: iPhone 12\n";
-        recoveredData << "- Tasa de bits original: 320 kbps (convertido a " << bitRate << " kbps)\n";
+    ostringstream oss;
+    if (hours > 0) {
+        oss << hours << ":";
     }
-    
-    return recoveredData.str();
+    oss << setfill('0') << setw(2) << minutes << ":"
+        << setfill('0') << setw(2) << secs;
+
+    return oss.str();
 }
 
-bool AudioMetadata::analyzeMP3(ifstream& file) {
-    // Simulación de análisis de MP3
-    title = "Amazing Song";
-    artist = "Great Artist";
-    album = "Fantastic Album";
-    year = "2022";
-    genre = "Rock";
-    duration = 215;  // 3:35
-    sampleRate = 44100;
-    bitRate = 320;
-    channels = 2;
-    
-    return true;
+
+
+void AudioMetadata::extractID3Tags() {
+    // Buscar tags ID3v2
+    if (m_fileHeader.size() > 10 && 
+        m_fileHeader[0] == 'I' && m_fileHeader[1] == 'D' && m_fileHeader[2] == '3') {
+        
+        // Buscar frames comunes
+        for (size_t i = 10; i < m_fileHeader.size() - 10; ++i) {
+            // TIT2 (Title)
+            if (i + 4 < m_fileHeader.size() &&
+                m_fileHeader[i] == 'T' && m_fileHeader[i + 1] == 'I' &&
+                m_fileHeader[i + 2] == 'T' && m_fileHeader[i + 3] == '2') {
+                
+                uint32_t frame_size = readUInt32BE(i + 4);
+                if (frame_size > 0 && frame_size < 256 && i + 11 + frame_size < m_fileHeader.size()) {
+                    string title = readString(i + 11, frame_size - 1);
+                    if (!title.empty()) {
+                        m_metadata["title"] = title;
+                    }
+                }
+            }
+            
+            // TPE1 (Artist)
+            if (i + 4 < m_fileHeader.size() &&
+                m_fileHeader[i] == 'T' && m_fileHeader[i + 1] == 'P' &&
+                m_fileHeader[i + 2] == 'E' && m_fileHeader[i + 3] == '1') {
+                
+                uint32_t frame_size = readUInt32BE(i + 4);
+                if (frame_size > 0 && frame_size < 256 && i + 11 + frame_size < m_fileHeader.size()) {
+                    string artist = readString(i + 11, frame_size - 1);
+                    if (!artist.empty()) {
+                        m_metadata["artist"] = artist;
+                    }
+                }
+            }
+            
+            // TALB (Album)
+            if (i + 4 < m_fileHeader.size() &&
+                m_fileHeader[i] == 'T' && m_fileHeader[i + 1] == 'A' &&
+                m_fileHeader[i + 2] == 'L' && m_fileHeader[i + 3] == 'B') {
+                
+                uint32_t frame_size = readUInt32BE(i + 4);
+                if (frame_size > 0 && frame_size < 256 && i + 11 + frame_size < m_fileHeader.size()) {
+                    string album = readString(i + 11, frame_size - 1);
+                    if (!album.empty()) {
+                        m_metadata["album"] = album;
+                    }
+                }
+            }
+        }
+    }
 }
 
-bool AudioMetadata::analyzeWAV(ifstream& file) {
-    // Simulación de análisis de WAV
-    title = "Voice Recording";
-    artist = "User";
-    duration = 65;  // 1:05
-    sampleRate = 48000;
-    bitRate = 1411;  // PCM 16-bit
-    channels = 1;  // Mono
+string AudioMetadata::readString(size_t offset, size_t length) const {
+    if (offset + length > m_fileHeader.size()) return "";
     
-    return true;
+    string result;
+    for (size_t i = 0; i < length; ++i) {
+        char c = static_cast<char>(m_fileHeader[offset + i]);
+        if (c == 0) break;
+        if (c >= 32 && c < 127) {
+            result += c;
+        }
+    }
+    return result;
 }
 
-bool AudioMetadata::analyzeOGG(ifstream& file) {
-    // Implementación para archivos OGG
-    title = "Podcast Episode 12";
-    artist = "Podcast Host";
-    album = "Tech Talks";
-    year = "2023";
-    duration = 1845;  // 30:45
-    sampleRate = 44100;
-    bitRate = 192;
-    channels = 2;
-    
-    return true;
-}
-
-bool AudioMetadata::analyzeM4A(ifstream& file) {
-    // Implementación para archivos M4A/AAC
-    title = "Audiobook Chapter 1";
-    artist = "Narrator Name";
-    album = "Book Title";
-    year = "2023";
-    genre = "Audiobook";
-    duration = 2430;  // 40:30
-    sampleRate = 44100;
-    bitRate = 256;
-    channels = 2;
-    
-    return true;
+uint32_t AudioMetadata::readUInt32BE(size_t offset) const {
+    if (offset + 4 > m_fileHeader.size()) return 0;
+    return (m_fileHeader[offset] << 24) | (m_fileHeader[offset + 1] << 16) |
+           (m_fileHeader[offset + 2] << 8) | m_fileHeader[offset + 3];
 }
