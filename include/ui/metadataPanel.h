@@ -2,6 +2,7 @@
 #define METADATAPANEL_H
 
 #include <gtk/gtk.h>
+#include <memory>
 #include <string>
 using namespace std;
 
@@ -20,31 +21,14 @@ class MetadataRecoveryEngine;
  */
 class MetadataPanel {
 private:
-    GtkWidget *file_frame;
-    GtkWidget *file_grid;
-    GtkWidget *file_button;
-    GtkWidget *file_label;
+    GtkWidget* panel;
+    GtkWidget* file_entry;
+    GtkWidget* text_view;
 
-    GtkWidget *file_chooser;
-    GtkWidget *image_filter;
-    GtkWidget *all_filter;
-    GtkWidget *doc_filter;
-
-    GtkWidget *scroll_window;
-    GtkWidget *file_info_label;
-    GtkWidget *progress_bar;
-    GtkWidget *status_label;
-    GtkWidget *main_vbox;
-    GtkWidget *results_vbox;
-    GtkWidget *results_frame;
-
-    GtkWidget *panel;
-    GtkWidget *file_entry;
-    GtkWidget *text_view;
-
-    MetadataRecoveryEngine *engine;
+    unique_ptr<MetadataRecoveryEngine> engine;
 
     void create_file_selection_section();
+
     void create_results_section();
 
 public:
