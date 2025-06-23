@@ -18,6 +18,7 @@ set(SOURCES
     src/metadata/AudioMetadata.cpp
     src/metadata/DocumentMetadata.cpp
     src/metadata/FileMetadata.cpp
+    src/metadata/ImageDeleteMetadata.cpp
     src/metadata/ImageMetadata.cpp
     src/core/FileEngine.cpp
     src/core/MetadataRecoveryEngine.cpp
