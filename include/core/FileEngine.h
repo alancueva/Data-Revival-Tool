@@ -27,8 +27,6 @@ private:
     unique_ptr<DocumentMetadata> documentMetadata;
     unique_ptr<AudioMetadata> audioMetadata;
 
-    string filePath;
-
     string getFileType(const filesystem::path &filePath);
 
     string getFile(const filesystem::path &filePath);

@@ -22,7 +22,6 @@ FileEngine::FileEngine()
     imageMetadata = make_unique<ImageMetadata>();
     documentMetadata = make_unique<DocumentMetadata>();
     audioMetadata = make_unique<AudioMetadata>();
-    // filePath = "";
 }
 
 FileEngine::~FileEngine() = default;
@@ -187,19 +186,24 @@ string FileEngine::deleteMetadata(const string &filePath)
     if (fileType == ".jpg" || fileType == ".jpeg")
     {
         cleanSuccess = imageMetadata->cleanJPEGMetadata(filePath, tempFile);
-        cleanMethod << "eliminación de metadatos EXIF/JPEG" << endl;
+        if(cleanSuccess){
+            cleanMethod << "eliminación de metadatos EXIF/JPEG" << endl;
+        }
+
     }
     else if (fileType == ".png")
     {
         cleanSuccess = imageMetadata->cleanPNGMetadata(filePath, tempFile);
-        cleanMethod << "eliminación de chunks de metadatos PNG" << endl; 
+        if(cleanSuccess){
+            cleanMethod << "eliminación de chunks de metadatos PNG" << endl;    
+        }
     }
 
     else
     {
         // Para tipos no soportados
-        std::ifstream input(filePath, std::ios::binary);
-        std::ofstream output(tempFile, std::ios::binary);
+        ifstream input(filePath, ios::binary);
+        ofstream output(tempFile, ios::binary);
 
         if (input.is_open() && output.is_open())
         {
