@@ -144,8 +144,6 @@ string ImageMetadata::getDimensionImage() {
                          (uint8_t)header[18] << 8 | (uint8_t)header[19];
         uint32_t height = (uint8_t)header[20] << 24 | (uint8_t)header[21] << 16 |
                           (uint8_t)header[22] << 8 | (uint8_t)header[23];
-
-        std::cout << "[PNG] Dimensiones: " << width << "x" << height << "\n";
         return to_string(width) + "x" + to_string(height);
     }
 
@@ -154,8 +152,6 @@ string ImageMetadata::getDimensionImage() {
     if (memcmp(header, "BM", 2) == 0) {
         uint32_t width = *(int32_t*)&header[18];
         uint32_t height = *(int32_t*)&header[22];
-
-        std::cout << "[BMP] Dimensiones: " << width << "x" << height << "\n";
         return to_string(width) + "x" + to_string(height);
     }
 
@@ -164,8 +160,6 @@ string ImageMetadata::getDimensionImage() {
     if (memcmp(header, "GIF87a", 6) == 0 || memcmp(header, "GIF89a", 6) == 0) {
         uint16_t width = (uint8_t)header[6] | ((uint8_t)header[7] << 8);
         uint16_t height = (uint8_t)header[8] | ((uint8_t)header[9] << 8);
-
-        cout << "[GIF] Dimensiones: " << width << "x" << height << "\n";
         return to_string(width) + "x" + to_string(height);
     }
 
@@ -183,7 +177,6 @@ string ImageMetadata::getDimensionImage() {
                 file.read(data, 7);
                 uint16_t height = ((uint8_t)data[1] << 8) | (uint8_t)data[2];
                 uint16_t width = ((uint8_t)data[3] << 8) | (uint8_t)data[4];
-                cout << "[JPG] Dimensiones: " << width << "x" << height << "\n";
                 return to_string(width) + "x" + to_string(height);
             } else {
                 char lenBytes[2];
@@ -201,52 +194,6 @@ string ImageMetadata::getDimensionImage() {
     return "";
 }
 
-
-
-// bool ImageMetadata::extract(const filesystem::path &filePath) {
-//     ifstream file(filePath, ios::binary);
-//     if (!file) {
-//         std::cerr << "Error: No se pudo abrir el archivo." << std::endl;
-//         return false;
-//     }
-
-//     // Leer los primeros bytes para identificar el formato
-//     char header[12] = {};
-//     file.read(header, 12);
-//     if (!file) {
-//         std::cerr << "Error: No se pudieron leer los primeros bytes del archivo." << std::endl;
-//         return false;
-//     }
-
-//     if (std::memcmp(header, "\x89PNG\r\n\x1a\n", 8) == 0) {
-//         std::cout << "Es una imagen PNG.\n";
-//     } else if (std::memcmp(header, "\xFF\xD8\xFF", 3) == 0) {
-//         std::cout << "Es una imagen JPG.\n";
-//     } else if (std::memcmp(header, "GIF87a", 6) == 0 || std::memcmp(header, "GIF89a", 6) == 0) {
-//         std::cout << "Es una imagen GIF.\n";
-//     } else if (std::memcmp(header, "BM", 2) == 0) {
-//         std::cout << "Es una imagen BMP.\n";
-//     } else if ((std::memcmp(header, "II*\x00", 4) == 0) || (std::memcmp(header, "MM\x00*", 4) == 0)) {
-//         std::cout << "Es una imagen TIFF.\n";
-//     } else if (std::memcmp(header, "RIFF", 4) == 0 && std::memcmp(header + 8, "WEBP", 4) == 0) {
-//         std::cout << "Es una imagen WEBP.\n";
-//     } else {
-//         std::cout << "Tipo de imagen desconocido.\n";
-//     }
-
-
-//     // Detectar el formato del archivo
-//     if (header[0] == (char)0xFF && header[1] == (char)0xD8) {
-//         std::cout << "Formato detectado: JPEG" << std::endl;
-//         return true;
-//     } else if (header[0] == (char)0x89 && header[1] == 'P' && header[2] == 'N' && header[3] == 'G') {
-//         std::cout << "Formato detectado: PNG" << std::endl;
-//         return true;
-//     } else {
-//         std::cerr << "Error: Formato de archivo no soportado." << std::endl;
-//         return false;
-//     }
-// }
 
 
 // Método para obtener el tamaño del archivo en bytes
@@ -283,7 +230,7 @@ string ImageMetadata::getFileTypeExtension() const {
 uint8_t ImageMetadata::getBitDepth() const {
     ifstream file(filePath, ios::binary);
     if (!file) {
-        std::cerr << "No se pudo abrir: " << filePath << "\n";
+        cerr << "No se pudo abrir: " << filePath << "\n";
         return -1;
     }
 
@@ -291,7 +238,7 @@ uint8_t ImageMetadata::getBitDepth() const {
     file.read(header, sizeof(header));
 
     // PNG
-    if (std::memcmp(header, "\x89PNG\r\n\x1a\n", 8) == 0) {
+    if (memcmp(header, "\x89PNG\r\n\x1a\n", 8) == 0) {
         file.seekg(24); // Byte 24: profundidad de bits en IHDR
         uint8_t bitDepth;
         file.read((char*)&bitDepth, 1);
@@ -299,7 +246,7 @@ uint8_t ImageMetadata::getBitDepth() const {
     }
 
     // BMP
-    if (std::memcmp(header, "BM", 2) == 0) {
+    if (memcmp(header, "BM", 2) == 0) {
         file.seekg(28); // Byte 28: profundidad de bits
         uint16_t bitDepth;
         file.read((char*)&bitDepth, 2);
@@ -307,7 +254,7 @@ uint8_t ImageMetadata::getBitDepth() const {
     }
 
     // GIF
-    if (std::memcmp(header, "GIF87a", 6) == 0 || std::memcmp(header, "GIF89a", 6) == 0) {
+    if (memcmp(header, "GIF87a", 6) == 0 || memcmp(header, "GIF89a", 6) == 0) {
         uint8_t packedField = header[10];
         int colorResolution = ((packedField & 0b01110000) >> 4) + 1;
         return colorResolution; // En bits por píxel
@@ -330,14 +277,14 @@ uint8_t ImageMetadata::getBitDepth() const {
                 char lenBytes[2];
                 file.read(lenBytes, 2);
                 uint16_t len = ((uint8_t)lenBytes[0] << 8) | (uint8_t)lenBytes[1];
-                file.seekg(len - 2, std::ios::cur);
+                file.seekg(len - 2, ios::cur);
             }
         }
         return -2; // No se pudo determinar
     }
 
     // WEBP (requiere análisis del chunk VP8X o VP8L para saber si es 8 o 24 bits)
-    if (std::memcmp(header, "RIFF", 4) == 0 && std::memcmp(header + 8, "WEBP", 4) == 0) {
+    if (memcmp(header, "RIFF", 4) == 0 && memcmp(header + 8, "WEBP", 4) == 0) {
         // Para simplificar, asumimos 24 bits (no hay header directo)
         return 24; // Se puede mejorar si deseas leer chunk VP8X
     }
