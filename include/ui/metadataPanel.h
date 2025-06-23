@@ -19,11 +19,12 @@ class MetadataRecoveryEngine;
  * Esta clase también incluye funcionalidades para cargar y guardar metadatos.
  * Además, permite la visualización y edición de metadatos existentes.
  */
-class MetadataPanel {
+class MetadataPanel
+{
 private:
-    GtkWidget* panel;
-    GtkWidget* file_entry;
-    GtkWidget* text_view;
+    GtkWidget *panel;
+    GtkWidget *file_entry;
+    GtkWidget *text_view;
 
     unique_ptr<MetadataRecoveryEngine> engine;
 
@@ -31,21 +32,28 @@ private:
 
     void create_results_section();
 
-public:
-    MetadataPanel();
-    ~MetadataPanel() ;
-    GtkWidget* get_panel();
+    /**
+     * @brief Método que se llama cuando se hace clic en el botón de eliminar metadatos.
+     * @param widget El widget que generó la señal.
+     */
+    static void on_delete_metadata_button_clicked(GtkWidget *widget, gpointer data);
 
     /**
      * @brief Método que se llama cuando se hace clic en el botón de examinar.
      * @param widget El widget que generó la señal.
      */
     static void on_browse_button_clicked(GtkWidget *widget, gpointer data);
+    
     /**
      * @brief Método que se llama cuando se hace clic en el botón de analizar.
      * @param widget El widget que generó la señal.
      */
     static void on_analyze_button_clicked(GtkWidget *widget, gpointer data);
+
+public:
+    MetadataPanel();
+    ~MetadataPanel();
+    GtkWidget *get_panel();
 };
 
 #endif

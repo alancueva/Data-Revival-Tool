@@ -67,7 +67,7 @@ void MetadataPanel::create_file_selection_section()
     GtkWidget *file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_container_add(GTK_CONTAINER(file_frame), file_box);
     gtk_widget_set_margin_start(file_box, 10);
-    gtk_widget_set_margin_end(file_box, 10);
+    gtk_widget_set_margin_end(file_box, 5);
     gtk_widget_set_margin_top(file_box, 10);
     gtk_widget_set_margin_bottom(file_box, 10);
 
@@ -86,16 +86,25 @@ void MetadataPanel::create_file_selection_section()
     // Contenedor horizontal para los botones de analizar y eliminar
     GtkWidget *button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 
-    // Botón de analizar
     GtkWidget *analyze_button = gtk_button_new_with_label("Analizar Metadatos");
+    GtkWidget *clear_button = gtk_button_new_with_label("Nuevo");
+    GtkWidget *delete_button = gtk_button_new_with_label("Eliminar Metadatos");
+
+    // Margen superior uniforme
     gtk_widget_set_margin_top(analyze_button, 10);
+    gtk_widget_set_margin_top(clear_button, 10);
+    gtk_widget_set_margin_top(delete_button, 10);
+
     gtk_box_pack_start(GTK_BOX(button_box), analyze_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_box), clear_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(button_box), delete_button, FALSE, FALSE, 0);
+
+    // Agregar botón_box al panel principal
+    gtk_box_pack_start(GTK_BOX(panel), button_box, FALSE, FALSE, 0);
+
     g_signal_connect(analyze_button, "clicked", G_CALLBACK(on_analyze_button_clicked), this);
 
-    // Botón de eliminar
-    GtkWidget *clear_button = gtk_button_new_with_label("Eliminar");
-    gtk_widget_set_margin_top(clear_button, 10);
-    gtk_box_pack_start(GTK_BOX(button_box), clear_button, FALSE, FALSE, 0);
+    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_metadata_button_clicked), this);
 
     // Conectar señal para limpiar file_entry y text_view
     g_signal_connect_swapped(clear_button, "clicked", G_CALLBACK(+[](MetadataPanel *self)
@@ -118,9 +127,18 @@ void MetadataPanel::create_file_selection_section()
                                                        }),
                      analyze_button);
 
+    g_signal_connect(file_entry, "changed", G_CALLBACK(+[](GtkEditable *editable, gpointer user_data)
+                                                       {
+                                                           GtkWidget *button = GTK_WIDGET(user_data);
+                                                           const gchar *text = gtk_entry_get_text(GTK_ENTRY(editable));
+                                                           gtk_widget_set_sensitive(button, (text && *text));
+                                                       }),
+                     delete_button);
+
     // Inicialmente deshabilitado si no hay texto
     const gchar *init_text = gtk_entry_get_text(GTK_ENTRY(file_entry));
     gtk_widget_set_sensitive(analyze_button, (init_text && *init_text));
+    gtk_widget_set_sensitive(delete_button, (init_text && *init_text));
 }
 
 void MetadataPanel::create_results_section()
@@ -194,5 +212,44 @@ void MetadataPanel::on_analyze_button_clicked(GtkWidget *widget, gpointer data)
         string error_msg = "Error al analizar el archivo: " + string(e.what());
         gtk_text_buffer_set_text(buffer, error_msg.c_str(), -1);
         cerr << "Metadata analysis error: " << e.what() << endl;
+    }
+}
+
+void MetadataPanel::on_delete_metadata_button_clicked(GtkWidget *widget, gpointer data)
+{
+    MetadataPanel *panel = static_cast<MetadataPanel *>(data);
+    const gchar *filepath = gtk_entry_get_text(GTK_ENTRY(panel->file_entry));
+
+    if (!filepath || strlen(filepath) == 0)
+        return;
+
+    // Crear diálogo de confirmación
+    GtkWidget *dialog = gtk_message_dialog_new(
+        nullptr,
+        GTK_DIALOG_MODAL,
+        GTK_MESSAGE_WARNING,
+        GTK_BUTTONS_YES_NO,
+        "¿Estás seguro de que deseas eliminar los metadatos del archivo?\n%s",
+        filepath);
+
+    gtk_window_set_title(GTK_WINDOW(dialog), "Confirmar eliminación");
+
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    if (response == GTK_RESPONSE_YES)
+    {
+        try
+        {
+            std::string result = panel->engine->deleteMetadata(filepath); // Asegúrate de tener este método en MetadataRecoveryEngine
+            GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(panel->text_view));
+            gtk_text_buffer_set_text(buffer, result.c_str(), -1);
+        }
+        catch (const std::exception &e)
+        {
+            GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(panel->text_view));
+            std::string error_msg = "Error al eliminar los metadatos: " + std::string(e.what());
+            gtk_text_buffer_set_text(buffer, error_msg.c_str(), -1);
+        }
     }
 }

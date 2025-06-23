@@ -15,17 +15,24 @@ using namespace std;
 FileEngine::FileEngine()
 {
     /**
-     * @brief Inicialización de los punteros únicos para almacenar metadatos de diferentes 
+     * @brief Inicialización de los punteros únicos para almacenar metadatos de diferentes
      * tipos de archivos.
      * @note Utiliza punteros únicos para gestionar la memoria de manera eficiente.
      */
     imageMetadata = make_unique<ImageMetadata>();
     documentMetadata = make_unique<DocumentMetadata>();
     audioMetadata = make_unique<AudioMetadata>();
-    filePath = "";
+    // filePath = "";
 }
 
 FileEngine::~FileEngine() = default;
+
+string FileEngine::getFileType(const filesystem::path &filepath_)
+{
+    string ext = filesystem::path(filepath_).extension().string();
+    transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+    return ext;
+}
 
 /**
  *
@@ -33,7 +40,7 @@ FileEngine::~FileEngine() = default;
  * @param filePath Ruta del archivo a analizar.
  * @return string con el tipo de archivo.
  */
-string FileEngine::getFileType(const filesystem::path &filePath)
+string FileEngine::getFile(const filesystem::path &filePath)
 {
     string ext = filePath.extension().string();
     transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -103,14 +110,13 @@ string FileEngine::getFileType(const filesystem::path &filePath)
 string FileEngine::processFile(const string &filePath)
 {
     filesystem::path path(filePath);
-    string fileType = getFileType(path);
+    string fileType = getFile(path);
     ifstream file(filePath, ios::binary);
     stringstream lstdata;
     if (file.is_open())
     {
         if (fileType == "Imagen")
         {
-            cout << "Procesando imagen: " << filePath << endl;
             lstdata << imageMetadata->extractMetadataImg(filePath);
         }
         else if (fileType == "Documento")
@@ -170,6 +176,40 @@ string FileEngine::processFile(const string &filePath)
     return lstdata.str();
 }
 
+string FileEngine::deleteMetadata(const string &filePath)
+{
+
+    string fileType = getFileType(filePath);
+    stringstream cleanMethod;
+    string tempFile = filePath + ".clean";
+     bool cleanSuccess = false;
+
+    if (fileType == ".jpg" || fileType == ".jpeg")
+    {
+        cleanSuccess = imageMetadata->cleanJPEGMetadata(filePath, tempFile);
+        cleanMethod << "eliminación de metadatos EXIF/JPEG" << endl;
+    }
+    else if (fileType == ".png")
+    {
+        cleanSuccess = imageMetadata->cleanPNGMetadata(filePath, tempFile);
+        cleanMethod << "eliminación de chunks de metadatos PNG" << endl; 
+    }
+
+    else
+    {
+        // Para tipos no soportados
+        std::ifstream input(filePath, std::ios::binary);
+        std::ofstream output(tempFile, std::ios::binary);
+
+        if (input.is_open() && output.is_open())
+        {
+            output << input.rdbuf();
+            cleanMethod << "copia simple (tipo no soportado para limpieza específica)" << endl;
+        }
+    }
+    return cleanMethod.str();
+}
+
 /**
  * @brief Método para procesar el archivo de forma asíncrona.
  * @param filePath Ruta del archivo a procesar.
@@ -192,4 +232,10 @@ future<string> FileEngine::processFileAsync(const string &filePath)
 {
     return async(launch::async, [this, filePath]()
                  { return this->processFile(filePath); });
+}
+
+future<string> FileEngine::deleteMetadaAsync(const string &filePath)
+{
+    return async(launch::async, [this, filePath]()
+                 { return this->deleteMetadata(filePath); });
 }

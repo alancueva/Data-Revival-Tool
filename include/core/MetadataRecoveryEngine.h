@@ -15,11 +15,14 @@ private:
     unique_ptr<FileEngine> fileEngine;
     string filePath;
     string routeImage(const filesystem::path &filePath);
-public:
+
+    public:
     MetadataRecoveryEngine();
     ~MetadataRecoveryEngine();
-
+    
     string recoverMetadata(const filesystem::path &filePath);
+    
+    string deleteMetadata(const std::string &filepath);
 };
 
 #endif

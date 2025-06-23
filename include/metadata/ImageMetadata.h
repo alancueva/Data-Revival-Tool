@@ -47,6 +47,16 @@ public:
      */
     string extractMetadataImg(const filesystem::path &filePath);
 
+    /**
+     * Limpiar Metadata para JPEG
+     */
+    bool cleanJPEGMetadata(const std::string& filepath, const std::string& tempFile);
+
+    /**
+     * Limpiar Metadata para PNG
+     */
+    bool cleanPNGMetadata(const std::string& filepath, const std::string& tempFile);
+
 private:
     ifstream fileStream;
 

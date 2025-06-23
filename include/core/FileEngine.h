@@ -28,14 +28,23 @@ private:
     unique_ptr<AudioMetadata> audioMetadata;
 
     string filePath;
+
     string getFileType(const filesystem::path &filePath);
+
+    string getFile(const filesystem::path &filePath);
+
     string processFile(const string &filePath);
+
+    string deleteMetadata(const string &filePath);
 
 public:
     FileEngine();
+
     ~FileEngine();
 
     future<string> processFileAsync(const string &filePath);
+
+    future<string> deleteMetadaAsync(const string &filePath);
 };
 
 #endif
