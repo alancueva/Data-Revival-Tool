@@ -41,18 +41,20 @@ void MetadataRecoveryGUI::cambiar_icono_ventana()
     gchar *dir = g_get_current_dir();
     gchar *icon_path = g_build_filename(dir, "resources", "icon",
                                         "icons8-herramientas-del-administrador-50.png", NULL);
-    if (!icon_path) {
+    if (!icon_path)
+    {
         g_free(dir);
         return;
     }
 
     GError *error = NULL;
     if (!gtk_window_set_icon_from_file(GTK_WINDOW(window), icon_path, &error))
-    {       
-        if (error) {
+    {
+        if (error)
+        {
             // g_warning("No se pudo cargar el icono: %s", error->message);
-            cerr << "Warning: No se pudo cargar el icono de la ventana: " 
-                      << error->message << endl;
+            cerr << "Warning: No se pudo cargar el icono de la ventana: "
+                 << error->message << endl;
             g_error_free(error);
         }
     }
@@ -91,7 +93,8 @@ void MetadataRecoveryGUI::crear()
     gtk_container_add(GTK_CONTAINER(window), main_container);
 }
 
-void MetadataRecoveryGUI::create_header_buttons(){
+void MetadataRecoveryGUI::create_header_buttons()
+{
 
     // Botones de la barra de menú
     const char *button_labels[] = {"Metadatos", "Recuperación"};
@@ -160,22 +163,19 @@ void MetadataRecoveryGUI::create_header_buttons(){
         g_free(icon_path);
         g_free(dir);
     }
-
 }
-
-
-
 
 void MetadataRecoveryGUI::clear_current_panel()
 {
-    if (current_panel && GTK_IS_WIDGET(current_panel)) {
-        GtkWidget* parent = gtk_widget_get_parent(current_panel);
-        if (parent == main_container) {
+    if (current_panel && GTK_IS_WIDGET(current_panel))
+    {
+        GtkWidget *parent = gtk_widget_get_parent(current_panel);
+        if (parent == main_container)
+        {
             gtk_container_remove(GTK_CONTAINER(main_container), current_panel);
         }
     }
 }
-
 
 /**
  * @brief Muestra la ventana principal de la GUI.
@@ -218,15 +218,6 @@ void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer
  */
 void MetadataRecoveryGUI::switch_to_panel(GtkWidget *panel)
 {
-
-    if (current_panel && GTK_IS_WIDGET(current_panel))
-    {
-        GtkWidget *parent = gtk_widget_get_parent(current_panel);
-        if (parent == main_container)
-        {
-            gtk_container_remove(GTK_CONTAINER(main_container), current_panel);
-        }
-    }
     // Limpiar panel actual
     clear_current_panel();
 
