@@ -1,6 +1,5 @@
 
 #include "../../include/ui/metadataPanel.h"
-#include "../../include/metadata/FileMetadata.h"
 #include "../../include/core/MetadataRecoveryEngine.h"
 #include <string>
 #include <stdexcept>
