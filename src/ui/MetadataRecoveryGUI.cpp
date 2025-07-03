@@ -17,10 +17,6 @@ MetadataRecoveryGUI::MetadataRecoveryGUI() : window(nullptr),
     try
     {
         crear();
-        if (metadata_panel)
-        {
-            switch_to_panel(metadata_panel->get_panel());
-        }
     }
     catch (const exception &e)
     {
@@ -89,8 +85,16 @@ void MetadataRecoveryGUI::crear()
 
     create_header_buttons();
 
-    main_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Crear stack en lugar de box
+    main_container = gtk_stack_new();
     gtk_container_add(GTK_CONTAINER(window), main_container);
+
+    // Agregar paneles al stack
+    gtk_stack_add_named(GTK_STACK(main_container), metadata_panel->get_panel(), "metadata");
+    gtk_stack_add_named(GTK_STACK(main_container), recovery_panel->get_panel(), "recovery");
+
+    // Mostrar panel inicial
+    gtk_stack_set_visible_child_name(GTK_STACK(main_container), "metadata");
 }
 
 void MetadataRecoveryGUI::create_header_buttons()
@@ -165,18 +169,6 @@ void MetadataRecoveryGUI::create_header_buttons()
     }
 }
 
-void MetadataRecoveryGUI::clear_current_panel()
-{
-    if (current_panel && GTK_IS_WIDGET(current_panel))
-    {
-        GtkWidget *parent = gtk_widget_get_parent(current_panel);
-        if (parent == main_container)
-        {
-            gtk_container_remove(GTK_CONTAINER(main_container), current_panel);
-        }
-    }
-}
-
 /**
  * @brief Muestra la ventana principal de la GUI.
  */
@@ -187,26 +179,14 @@ void MetadataRecoveryGUI::mostrar() noexcept
 
 void MetadataRecoveryGUI::on_metadata_button_clicked(GtkWidget *widget, gpointer data)
 {
-    if (!data)
-        return;
-
     auto *app = static_cast<MetadataRecoveryGUI *>(data);
-    if (app->metadata_panel)
-    {
-        app->switch_to_panel(app->metadata_panel->get_panel());
-    }
+    app->switch_to_panel("metadata");
 }
 
 void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer data)
 {
-    if (!data)
-        return;
-
     auto *app = static_cast<MetadataRecoveryGUI *>(data);
-    if (app->recovery_panel)
-    {
-        app->switch_to_panel(app->recovery_panel->get_panel());
-    }
+    app->switch_to_panel("recovery");
 }
 
 /**
@@ -216,14 +196,7 @@ void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer
  * @note Esta función se utiliza para cambiar el panel actual de la GUI.
  * @note El panel actual se elimina de la ventana principal y se agrega el nuevo panel.
  */
-void MetadataRecoveryGUI::switch_to_panel(GtkWidget *panel)
+void MetadataRecoveryGUI::switch_to_panel(const char* panel_name)
 {
-    // Limpiar panel actual
-    clear_current_panel();
-
-    g_object_ref(panel);
-    gtk_box_pack_start(GTK_BOX(main_container), panel, TRUE, TRUE, 0);
-
-    current_panel = panel;
-    gtk_widget_show_all(main_container);
+    gtk_stack_set_visible_child_name(GTK_STACK(main_container), panel_name);
 }

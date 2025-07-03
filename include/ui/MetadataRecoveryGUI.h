@@ -43,12 +43,8 @@ private:
      * @brief Cambia entre paneles de la aplicación
      * @param panel Panel a mostrar
      */
-    void switch_to_panel(GtkWidget *panel);
+    void switch_to_panel(const char* panel_name);
 
-     /**
-     * @brief Limpia el panel actual de forma segura
-     */
-    void clear_current_panel();
 public:
     /**
      * @brief Constructor de la clase MetadataRecoveryGUI.
