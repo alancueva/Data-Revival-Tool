@@ -114,8 +114,6 @@ void MetadataPanel::create_file_selection_section()
                                                                  }),
                              this);
 
-    // Agregar el contenedor de botones al panel
-    gtk_box_pack_start(GTK_BOX(panel), button_box, FALSE, FALSE, 0);
 
     // Habilitar/deshabilitar el botón según el contenido de file_entry
     g_signal_connect(file_entry, "changed", G_CALLBACK(+[](GtkEditable *editable, gpointer user_data)
