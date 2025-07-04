@@ -2,6 +2,10 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 std::vector<std::string> get_disks_windows()
 {
@@ -12,11 +16,23 @@ std::vector<std::string> get_disks_windows()
     {
         if (mask & (1 << (letter - 'A')))
         {
-            std::string drive = std::string(1, letter) + ":\\";
-            UINT type = GetDriveTypeA(drive.c_str());
+            std::string root_path = std::string(1, letter) + ":\\";
+            UINT type = GetDriveTypeA(root_path.c_str());
+
             if (type == DRIVE_FIXED || type == DRIVE_REMOVABLE)
             {
-                drives.push_back(drive);
+                ULARGE_INTEGER freeBytesAvailable, totalBytes, totalFreeBytes;
+                if (GetDiskFreeSpaceExA(root_path.c_str(), &freeBytesAvailable, &totalBytes, &totalFreeBytes))
+                {
+                    double size_gb = totalBytes.QuadPart / (1024.0 * 1024.0 * 1024.0);
+                    std::ostringstream label;
+                    label << root_path << " (" << std::fixed << std::setprecision(2) << size_gb << " GB)";
+                    drives.push_back(label.str());
+                }
+                else
+                {
+                    drives.push_back(root_path + " (Tamaño desconocido)");
+                }
             }
         }
     }
@@ -25,37 +41,59 @@ std::vector<std::string> get_disks_windows()
 }
 
 #elif __linux__
-#include <fstream>
+#include <cstdio>
 #include <sstream>
-#include <regex>
-
+#include <vector>
+#include <string>
+#include <iomanip>
+#include <cstdint>
 
 std::vector<std::string> get_disks_linux()
 {
-    std::vector<std::string> devices;
-    std::ifstream file("/proc/partitions");
-    std::string line;
-    std::regex disk_regex("^[a-z]+$");  // solo letras, sin número final
+    std::vector<std::string> result;
+    FILE *fp = popen("lsblk -b -o NAME,SIZE,FSTYPE --noheadings", "r");
+    if (!fp)
+        return result;
 
-    while (std::getline(file, line))
+    char buffer[256];
+
+    while (fgets(buffer, sizeof(buffer), fp))
     {
-        std::istringstream iss(line);
-        std::string major, minor, blocks, name;
-        if (!(iss >> major >> minor >> blocks >> name)) continue;
+        std::istringstream iss(buffer);
+        std::string name, fstype;
+        uint64_t size_bytes;
 
-        // if (name.find("sd") == 0 || name.find("nvme") == 0)
-        // {
-        //     devices.push_back("/dev/" + name);
-        // }
+        if (!(iss >> name >> size_bytes)) continue;
+        iss >> fstype;  
 
-        // Solo agregar los discos (no particiones)
-         if ((name.find("sd") == 0 || name.find("nvme") == 0) && std::regex_match(name, disk_regex)) {
-            devices.push_back("/dev/" + name);
+        /**
+         * -b → muestra el tamaño en bytes exactos
+         * convertimos a GB el resultado de size_bytes
+         */
+        double size_gb = size_bytes / (1024.0 * 1024.0 * 1024.0);
+
+        /**
+         * Excluimos dispositivos que no son relevantes
+         * como dispositivos de bucle, zram o aquellos con tamaño menor a 10 MB
+         * particiones de 0.00 GB o demasiado pequeñas (por ejemplo, de menos de 0.01 GB)
+         */
+        if (name.find("loop") == 0 || name.find("zram") == 0 || size_gb < 0.01)
+            continue;
+
+        std::ostringstream entry;
+        entry << "/dev/" << name << " (" << std::fixed << std::setprecision(2) << size_gb << " GB)";
+
+         if (!fstype.empty()) {
+            entry << " [" << fstype << "]";
         }
+        
+        result.push_back(entry.str());
     }
 
-    return devices;
+    pclose(fp);
+    return result;
 }
+
 #endif
 
 std::vector<std::string> get_disks()
