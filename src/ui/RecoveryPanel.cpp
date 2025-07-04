@@ -1,4 +1,5 @@
 #include "../../include/ui/recoveryPanel.h"
+#include "../../include/recovery/devices.h"
 #include <iostream>
 
 RecoveryPanel::RecoveryPanel() : 
@@ -42,16 +43,17 @@ void RecoveryPanel::create_device_selection_section() {
     gtk_widget_set_margin_top(device_box, 10);
     gtk_widget_set_margin_bottom(device_box, 10);
     
-    // Combo box para seleccionar dispositivo
-    // simulacion de dispositivos
-    // En una aplicación real, aquí se cargarían los dispositivos disponibles
-    // y se añadirían al combo box.
-    // Por simplicidad, se añaden algunos dispositivos de ejemplo.
     device_combo = gtk_combo_box_text_new();
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(device_combo), "/dev/sda1");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(device_combo), "/dev/sdb1");
-    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(device_combo), "/dev/sdc1");
-    gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), 0);
+
+    std::vector<std::string> disks = get_disks();
+
+    for (const auto& disk : disks) {
+        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(device_combo), disk.c_str());
+    }
+
+    if (!disks.empty()) {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), 0);
+    }
     gtk_box_pack_start(GTK_BOX(device_box), device_combo, FALSE, FALSE, 0);
 }
 

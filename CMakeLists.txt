@@ -19,6 +19,7 @@ set(SOURCES
     src/metadata/DocumentMetadata.cpp
     src/metadata/ImageDeleteMetadata.cpp
     src/metadata/ImageMetadata.cpp
+    src/recovery/devices.cpp
     src/core/FileEngine.cpp
     src/core/MetadataRecoveryEngine.cpp
     src/ui/MetadataPanel.cpp 
