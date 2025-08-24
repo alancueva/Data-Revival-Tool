@@ -5,11 +5,12 @@
 #include <vector>
 #include <algorithm>
 #include <stdexcept>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <set>
 
 using namespace std;
-
 
 bool ImageMetadata::cleanJPEGMetadata(const string &filepath, const string &tempFile)
 {
@@ -19,57 +20,84 @@ bool ImageMetadata::cleanJPEGMetadata(const string &filepath, const string &temp
     if (!input.is_open() || !output.is_open())
         return false;
 
-
-    vector<unsigned char> buffer(2);
-
-    // Leer y escribir SOI marker (0xFFD8)
-    input.read(reinterpret_cast<char *>(buffer.data()), 2);
-    if (buffer[0] != 0xFF || buffer[1] != 0xD8)
+    /**
+     * Leer y verificar el SOI marker (0xFFD8) (Start Of Image)
+     *
+     */
+    unsigned char soi[2];
+    input.read(reinterpret_cast<char *>(soi), 2);
+    if (soi[0] != 0xFF || soi[1] != 0xD8)
         return false;
-    output.write(reinterpret_cast<char *>(buffer.data()), 2);
+    output.write(reinterpret_cast<char *>(soi), 2);
 
-    while (input.read(reinterpret_cast<char *>(buffer.data()), 2))
+    vector<char> segment_data_buffer;
+
+    while (input.peek() != EOF)
     {
-        if (buffer[0] == 0xFF)
+        unsigned char marker[2];
+        input.read(reinterpret_cast<char *>(marker), 2);
+
+        if (marker[0] != 0xFF)
         {
-            // Verificar si es un segmento de metadatos
-            if (buffer[1] == 0xE0 || buffer[1] == 0xE1 || buffer[1] == 0xE2 ||
-                buffer[1] == 0xE3 || buffer[1] == 0xE4 || buffer[1] == 0xE5 ||
-                buffer[1] == 0xE6 || buffer[1] == 0xE7 || buffer[1] == 0xE8 ||
-                buffer[1] == 0xE9 || buffer[1] == 0xEA || buffer[1] == 0xEB ||
-                buffer[1] == 0xEC || buffer[1] == 0xED || buffer[1] == 0xEE ||
-                buffer[1] == 0xEF || buffer[1] == 0xFE)
-            {
-
-                // Leer longitud del segmento
-                vector<unsigned char> lengthBytes(2);
-                input.read(reinterpret_cast<char *>(lengthBytes.data()), 2);
-                int segmentLength = (lengthBytes[0] << 8) | lengthBytes[1];
-
-                // Saltar el resto del segmento de metadatos
-                input.seekg(segmentLength - 2, ios::cur);
-                continue;
-            }
-
-            // Si es SOS (Start of Scan) o EOI, escribir el resto del archivo
-            if (buffer[1] == 0xDA || buffer[1] == 0xD9)
-            {
-                output.write(reinterpret_cast<char *>(buffer.data()), 2);
-                output << input.rdbuf();
-                break;
-            }
-
-            // Para otros marcadores, copiar normalmente
-            output.write(reinterpret_cast<char *>(buffer.data()), 2);
-        }
-        else
-        {
-            // No es un marcador, retroceder y copiar el resto
-            input.seekg(-1, ios::cur);
+            // Estructura JPEG inválida o estamos dentro de los datos de imagen.
+            // Por simplicidad, escribimos los bytes leídos y copiamos el resto.
+            output.write(reinterpret_cast<char *>(marker), 2);
             output << input.rdbuf();
             break;
         }
+
+        const unsigned char marker_code = marker[1];
+
+        // Marcador EOI (End Of Image)
+        if (marker_code == 0xD9)
+        {
+            output.write(reinterpret_cast<char *>(marker), 2);
+            break;
+        }
+
+        // Marcadores standalone (sin campo de longitud)
+        if ((marker_code >= 0xD0 && marker_code <= 0xD7) || marker_code == 0x01)
+        {
+            output.write(reinterpret_cast<char *>(marker), 2);
+            continue;
+        }
+
+        // Leer la longitud del segmento
+        unsigned char length_bytes[2];
+        input.read(reinterpret_cast<char *>(length_bytes), 2);
+        uint16_t segment_length = (length_bytes[0] << 8) | length_bytes[1];
+
+        // Segmentos a eliminar (APPn, COM)
+        // Se saltan los segmentos de metadatos
+        if ((marker_code >= 0xE0 && marker_code <= 0xEF) || marker_code == 0xFE)
+        {
+            input.seekg(segment_length - 2, ios::cur);
+        }
+        else if (marker_code == 0xDA)
+        {
+            // Marcador SOS (Start Of Scan)
+            // Escribir el marcador, la longitud y el encabezado del segmento
+            output.write(reinterpret_cast<char *>(marker), 2);
+            output.write(reinterpret_cast<char *>(length_bytes), 2);
+            segment_data_buffer.resize(segment_length - 2);
+            input.read(segment_data_buffer.data(), segment_length - 2);
+            output.write(segment_data_buffer.data(), segment_length - 2);
+
+            // Después de SOS, copiar el resto del flujo de datos de imagen
+            output << input.rdbuf();
+            break;
+        }
+        else
+        {
+            // Otros segmentos a conservar (DQT, DHT, SOF, etc.)
+            output.write(reinterpret_cast<char *>(marker), 2);
+            output.write(reinterpret_cast<char *>(length_bytes), 2);
+            segment_data_buffer.resize(segment_length - 2);
+            input.read(segment_data_buffer.data(), segment_length - 2);
+            output.write(segment_data_buffer.data(), segment_length - 2);
+        }
     }
+
     return true;
 }
 
@@ -82,53 +110,71 @@ bool ImageMetadata::cleanPNGMetadata(const string &filepath, const string &tempF
         return false;
 
     // Verificar signature PNG
-    vector<unsigned char> signature(8);
-    input.read(reinterpret_cast<char *>(signature.data()), 8);
+    unsigned char signature[8];
+    input.read(reinterpret_cast<char *>(signature), 8);
 
+    /**
+     * PNG Signature (8 bytes): 89 50 4E 47 0D 0A 1A 0A
+     */
     const unsigned char pngSignature[] = {0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
-    if (memcmp(signature.data(), pngSignature, 8) != 0)
+    if (memcmp(signature, pngSignature, 8) != 0)
         return false;
 
     // Escribir signature
-    output.write(reinterpret_cast<char *>(signature.data()), 8);
+    output.write(reinterpret_cast<char *>(signature), 8);
+
+    // Conjunto de chunks a eliminar.
+    // Los chunks críticos (IHDR, PLTE, IDAT, IEND) nunca deben estar aquí.
+    const set<string> chunks_to_remove = {
+        "tEXt", "zTXt", "iTXt", // Datos textuales
+        "tIME",                 // Fecha de última modificación
+        "pHYs",                 // Dimensiones físicas del píxel
+        "sBIT",                 // Bits significativos
+        "eXIf",                 // Metadatos EXIF
+        "iCCP",                 // Perfil ICC embebido
+        "sPLT",                 // Paleta sugerida
+        "gAMA",                 // Corrección Gamma
+        "cHRM"                  // Coordenadas de cromaticidad
+    };
+    vector<char> data_buffer;
 
     // Procesar chunks
-    while (input.good())
+    //
+    while (input.good() && input.peek() != EOF)
     {
-        vector<unsigned char> lengthBytes(4);
-        if (!input.read(reinterpret_cast<char *>(lengthBytes.data()), 4))
+        unsigned char length_bytes[4];
+        if (!input.read(reinterpret_cast<char *>(length_bytes), 4))
             break;
 
-        uint32_t chunkLength = (lengthBytes[0] << 24) | (lengthBytes[1] << 16) |
-                               (lengthBytes[2] << 8) | lengthBytes[3];
+        uint32_t chunk_length = (length_bytes[0] << 24) | (length_bytes[1] << 16) |
+                                (length_bytes[2] << 8) | length_bytes[3];
 
-        vector<unsigned char> chunkType(4);
-        input.read(reinterpret_cast<char *>(chunkType.data()), 4);
-
-        string typeStr(chunkType.begin(), chunkType.end());
+        char chunk_type_arr[4];
+        input.read(chunk_type_arr, 4);
+        if (input.fail())
+            break;
+        string typeStr(chunk_type_arr, 4);
 
         // Saltar chunks de metadatos
-        if (typeStr == "tEXt" || typeStr == "zTXt" || typeStr == "iTXt" ||
-            typeStr == "tIME" || typeStr == "pHYs" || typeStr == "sBIT" ||
-            typeStr == "eXIf")
+        // (tEXt, zTXt, iTXt, tIME, pHYs, sBIT, eXIf, iCCP, sPLT, gAMA, cHRM)
+        // +4 para el CRC
+        if (chunks_to_remove.count(typeStr))
         {
-            input.seekg(chunkLength + 4, ios::cur); // +4 para CRC
+            input.seekg(chunk_length + 4, ios::cur);
             continue;
         }
 
         // Escribir chunk normal
-        output.write(reinterpret_cast<char *>(lengthBytes.data()), 4);
-        output.write(reinterpret_cast<char *>(chunkType.data()), 4);
+        output.write(reinterpret_cast<char *>(length_bytes), 4);
+        output.write(chunk_type_arr, 4);
 
-        // Copiar datos del chunk
-        vector<unsigned char> chunkData(chunkLength);
-        input.read(reinterpret_cast<char *>(chunkData.data()), chunkLength);
-        output.write(reinterpret_cast<char *>(chunkData.data()), chunkLength);
+        data_buffer.resize(chunk_length);
+        input.read(data_buffer.data(), chunk_length);
+        output.write(data_buffer.data(), chunk_length);
 
-        // Copiar CRC
-        vector<unsigned char> crc(4);
-        input.read(reinterpret_cast<char *>(crc.data()), 4);
-        output.write(reinterpret_cast<char *>(crc.data()), 4);
+        char crc[4];
+        input.read(crc, 4);
+        output.write(crc, 4);
 
         // Si es IEND, terminar
         if (typeStr == "IEND")
