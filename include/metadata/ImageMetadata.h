@@ -34,7 +34,7 @@ public:
 
     string filePath;
 
-    string routeImage(const filesystem::path &filePath);
+    string setFilePath(const filesystem::path &filePath);
 
     bool extract(const filesystem::path &filePath);
     // string getAllMetadata() const;
@@ -60,8 +60,8 @@ public:
 private:
     ifstream fileStream;
 
-    string getDimensionImage();
-    string getFileType();
+    string getDimensionImage() const;
+    string getFileType() const;
 
     string getPixelUnits() const;
     double getMegapixels() const; 

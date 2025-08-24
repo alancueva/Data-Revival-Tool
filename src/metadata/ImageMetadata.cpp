@@ -8,7 +8,6 @@
 #include <cstring>
 #include <string>
 #include <filesystem>
-using namespace std;
 
 ImageMetadata::ImageMetadata() {
     imageData.width = 0;
@@ -30,58 +29,33 @@ ImageMetadata::ImageMetadata() {
 ImageMetadata::~ImageMetadata() {
 }
 
-string ImageMetadata::routeImage(const filesystem::path &filePath) {
+std::string ImageMetadata::setFilePath(const std::filesystem::path &filePath) {
     this->filePath = filePath.string();
     return this->filePath;
 }
 
 
 /**
- * ---------------------- METODO QUE EXTRAERÁ DETALLES DE LA IMAGEN ------------------------------
  * @brief Método para analizar el archivo y extraer metadatos.
  * @return string con los metadatos extraídos.
  */
-string ImageMetadata::extractMetadataImg(const filesystem::path &filePath) {
-    routeImage(filePath);
-    stringstream metadata;
+std::string ImageMetadata::extractMetadataImg(const std::filesystem::path &filePath) {
+    setFilePath(filePath);
+    std::stringstream metadata;
     metadata << "== METADATOS DE IMAGEN ==\n\n"
-             //          << "Metadata del archivo PNG:" << "\n\n";
              << "Nombre del archivo: " << getFileName() << "\n"
              << "Tamaño del archivo: " << getFormattedFileSize() << "\n"
              << "Tipo de archivo: " << getFileType() << "\n"
              << "Extensión: " << getFileTypeExtension() << "\n"
-             // metadata << "MIME Type: " << extractor.getMIMEType() << "\n";
-             // metadata << "Ancho de imagen: " << extractor.getImageWidth() << "\n";
-             // metadata << "Alto de imagen: " << extractor.getImageHeight() << "\n";
              << "Profundidad de bits: " << static_cast<int>(getBitDepth()) << "\n"
              << "Tipo de color: " << getColorType() << "\n"
-             // metadata << "Compresión: " << extractor.getCompression() << "\n";
-             // metadata << "Filtro: " << extractor.getFilter() << "\n";
-             // metadata << "Entrelazado: " << extractor.getInterlace() << "\n";
-             // metadata << "Renderizado sRGB: " << extractor.getSRGBRendering() << "\n";
-             // metadata << "Gamma: " << extractor.getGamma() << "\n";
              << "Dimensiones de la Imagen: " << getDimensionImage() << "\n"
-             // metadata << "Píxeles por unidad X: " << extractor.getPixelsPerUnitX() << "\n";
-             // metadata << "Píxeles por unidad Y: " << extractor.getPixelsPerUnitY() << "\n";
              << "Unidades de píxel: " << getPixelUnits() << "\n";
-    //<< "Tamaño de imagen: " << getImageSize() << "\n";
-    // metadata << "Megapíxeles: " << extractor.getMegapixels() << "\n";
-    // metadata << "Categoría: " << extractor.getCategory() << "\n";
-    // metadata << "Raw Header: " << extractor.getRawHeader() << "\n";
-    // if (extract(filePath))
-    // {
-    //     metadata << getAllMetadata();
-    // }
-    // else
-    // {
-    //     metadata << "Error al leer metadatos";
-    // }
-    //getDimensionImage();
     return metadata.str();
 }
 
 
-string ImageMetadata::getPixelUnits() const {
+std::string ImageMetadata::getPixelUnits() const {
     return imageData.pixelUnits;
 }
 
@@ -89,10 +63,10 @@ double ImageMetadata::getMegapixels() const {
     return static_cast<double>(imageData.width * imageData.height) / 1000000.0;
 }
 
-string ImageMetadata::getFileType() {
-    ifstream file(filePath, ios::binary);
+std::string ImageMetadata::getFileType() const {
+    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        cerr << "No se pudo abrir el archivo: " << filePath << "\n";
+        std::cerr << "No se pudo abrir el archivo: " << filePath << "\n";
         return "";
     }
     char header[12] = {} ;
@@ -127,10 +101,10 @@ string ImageMetadata::getFileType() {
 }
 
 
-string ImageMetadata::getDimensionImage() {
-    ifstream file(filePath, ios::binary);
+std::string ImageMetadata::getDimensionImage() const {
+    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        cerr << "No se pudo abrir el archivo: " << filePath << "\n";
+        std::cerr << "No se pudo abrir el archivo: " << filePath << "\n";
         return "";
     }
 
@@ -144,23 +118,25 @@ string ImageMetadata::getDimensionImage() {
                          (uint8_t)header[18] << 8 | (uint8_t)header[19];
         uint32_t height = (uint8_t)header[20] << 24 | (uint8_t)header[21] << 16 |
                           (uint8_t)header[22] << 8 | (uint8_t)header[23];
-        return to_string(width) + "x" + to_string(height);
+        return std::to_string(width) + "x" + std::to_string(height);
     }
 
     // ----------------------------
     // BMP: firma "BM"
     if (memcmp(header, "BM", 2) == 0) {
-        uint32_t width = *(int32_t*)&header[18];
-        uint32_t height = *(int32_t*)&header[22];
-        return to_string(width) + "x" + to_string(height);
+        // Lectura segura para Little Endian (formato BMP)
+        int32_t width = (uint8_t)header[18] | ((uint8_t)header[19] << 8) | ((uint8_t)header[20] << 16) | ((uint8_t)header[21] << 24);
+        int32_t height = (uint8_t)header[22] | ((uint8_t)header[23] << 8) | ((uint8_t)header[24] << 16) | ((uint8_t)header[25] << 24);
+        return std::to_string(width) + "x" + std::to_string(height);
     }
 
     // ----------------------------
     // GIF: firma "GIF87a" o "GIF89a"
     if (memcmp(header, "GIF87a", 6) == 0 || memcmp(header, "GIF89a", 6) == 0) {
+        // Lectura segura para Little Endian (formato GIF)
         uint16_t width = (uint8_t)header[6] | ((uint8_t)header[7] << 8);
         uint16_t height = (uint8_t)header[8] | ((uint8_t)header[9] << 8);
-        return to_string(width) + "x" + to_string(height);
+        return std::to_string(width) + "x" + std::to_string(height);
     }
 
     // ----------------------------
@@ -177,20 +153,20 @@ string ImageMetadata::getDimensionImage() {
                 file.read(data, 7);
                 uint16_t height = ((uint8_t)data[1] << 8) | (uint8_t)data[2];
                 uint16_t width = ((uint8_t)data[3] << 8) | (uint8_t)data[4];
-                return to_string(width) + "x" + to_string(height);
+                return std::to_string(width) + "x" + std::to_string(height);
             } else {
                 char lenBytes[2];
                 file.read(lenBytes, 2);
                 uint16_t blockLength = ((uint8_t)lenBytes[0] << 8) | (uint8_t)lenBytes[1];
-                file.seekg(blockLength - 2, ios::cur);
+                file.seekg(blockLength - 2, std::ios::cur);
             }
         }
 
-        cout << "[JPG] No se pudo leer dimensiones.\n";
+        std::cout << "[JPG] No se pudo leer dimensiones.\n";
         return "";
     }
 
-    cout << "Formato desconocido o no soportado.\n";
+    std::cout << "Formato desconocido o no soportado.\n";
     return "";
 }
 
@@ -198,39 +174,42 @@ string ImageMetadata::getDimensionImage() {
 
 // Método para obtener el tamaño del archivo en bytes
 int64_t ImageMetadata::getFileSize() const {
-    ifstream fs(filePath, ios::binary | ios::ate);
+    std::ifstream fs(filePath, std::ios::binary | std::ios::ate);
     if (!fs) return -1;
     return fs.tellg();
 }
 
 // Método para formatear el tamaño del archivo como string (KB, MB, etc.)
-string ImageMetadata::getFormattedFileSize() const {
+std::string ImageMetadata::getFormattedFileSize() const {
     int64_t size = getFileSize();
     if (size < 0) return "Unknown";
 
-    if (size < 1024) {
-        return to_string(size) + " B";
-    } else if (size < 1024 * 1024) {
-        return to_string(size / 1024) + " kB";
-    } else {
-        return to_string(size / (1024 * 1024)) + " MB";
+    const char* units[] = { "B", "KB", "MB", "GB", "TB" };
+    int unitIndex = 0;
+    double formattedSize = static_cast<double>(size);
+
+    while (formattedSize >= 1024.0 && unitIndex < 4) {
+        formattedSize /= 1024.0;
+        ++unitIndex;
     }
+
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(2) << formattedSize << " " << units[unitIndex];
+    return out.str();
 }
 
-string ImageMetadata::getFileName() const {
-    size_t pos = filePath.find_last_of("/\\");
-    return (pos != string::npos) ? filePath.substr(pos + 1) : filePath;
+std::string ImageMetadata::getFileName() const {
+    return std::filesystem::path(filePath).filename().string();
 }
 
-string ImageMetadata::getFileTypeExtension() const {
-    size_t pos = filePath.find_last_of(".");
-    return (pos != string::npos) ? filePath.substr(pos + 1) : "";
+std::string ImageMetadata::getFileTypeExtension() const {
+    return std::filesystem::path(filePath).extension().string();
 }
 
 uint8_t ImageMetadata::getBitDepth() const {
-    ifstream file(filePath, ios::binary);
+    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        cerr << "No se pudo abrir: " << filePath << "\n";
+        std::cerr << "No se pudo abrir: " << filePath << "\n";
         return -1;
     }
 
@@ -248,9 +227,9 @@ uint8_t ImageMetadata::getBitDepth() const {
     // BMP
     if (memcmp(header, "BM", 2) == 0) {
         file.seekg(28); // Byte 28: profundidad de bits
-        uint16_t bitDepth;
-        file.read((char*)&bitDepth, 2);
-        return bitDepth;
+        char depthBytes[2];
+        file.read(depthBytes, 2);
+        return static_cast<uint16_t>((uint8_t)depthBytes[0] | ((uint8_t)depthBytes[1] << 8));
     }
 
     // GIF
@@ -277,7 +256,7 @@ uint8_t ImageMetadata::getBitDepth() const {
                 char lenBytes[2];
                 file.read(lenBytes, 2);
                 uint16_t len = ((uint8_t)lenBytes[0] << 8) | (uint8_t)lenBytes[1];
-                file.seekg(len - 2, ios::cur);
+                file.seekg(len - 2, std::ios::cur);
             }
         }
         return -2; // No se pudo determinar
@@ -293,52 +272,46 @@ uint8_t ImageMetadata::getBitDepth() const {
     // return imageData.bitDepth;
 }
 
-string ImageMetadata::getColorType() const {
-    ifstream file(filePath, ios::binary);
+std::string ImageMetadata::getColorType() const {
+    std::ifstream file(filePath, std::ios::binary);
     if (!file) {
-        cerr << "No se puede abrir el archivo\n";
-        return "\n";
-    }
-    stringstream metadata;
-
-    file.seekg(10); // Offset a los datos de píxeles
-    uint32_t pixelOffset;
-    file.read((char*)&pixelOffset, 4);
-
-    file.seekg(18); // Dimensiones
-    int32_t width, height;
-    file.read((char*)&width, 4);
-    file.read((char*)&height, 4);
-
-    file.seekg(28); // Bits por píxel
-    uint16_t bpp;
-    file.read((char*)&bpp, 2);
-
-    if (bpp != 24) {
-        cerr << "Solo soportado BMP de 24 bits (sin compresión)\n";
-        metadata << "No soportado \n";
-        return metadata.str();
+        std::cerr << "No se puede abrir el archivo\n";
+        return "Error al abrir archivo";
     }
 
-    // Ir a donde empiezan los píxeles
-    file.seekg(pixelOffset);
+    char header[32] = {};
+    file.read(header, sizeof(header));
+    file.close();
 
-    int rowPadding = (4 - (width * 3) % 4) % 4; // Cada fila debe alinear a 4 bytes
-
-    cout << "Primeros colores en hexadecimal (formato #RRGGBB):\n";
-
-    for (int y = 0; y < min(height, 5); ++y) { // solo primeras 5 filas
-        for (int x = 0; x < min(width, 5); ++x) { // primeras 5 columnas
-            uint8_t bgr[3];
-            file.read((char*)bgr, 3);
-            metadata << "#" << hex << setw(2) << setfill('0')
-                     << (int)bgr[2]  // Red
-                     << setw(2) << (int)bgr[1]  // Green
-                     << setw(2) << (int)bgr[0]  // Blue
-                     << " ";
+    // PNG
+    if (memcmp(header, "\x89PNG\r\n\x1a\n", 8) == 0) {
+        uint8_t colorType = header[25];
+        switch (colorType) {
+            case 0: return "Escala de grises";
+            case 2: return "Truecolor (RGB)";
+            case 3: return "Indexado";
+            case 4: return "Escala de grises con alfa";
+            case 6: return "Truecolor con alfa (RGBA)";
+            default: return "Desconocido (PNG)";
         }
-        file.ignore(rowPadding); // Saltar padding
-        metadata << "\n"; // Nueva fila en el tex
     }
-    return metadata.str();
+    // JPG
+    else if (memcmp(header, "\xFF\xD8\xFF", 3) == 0) {
+        return "YCbCr (típicamente convertido a RGB)";
+    }
+    // GIF
+    else if (memcmp(header, "GIF87a", 6) == 0 || memcmp(header, "GIF89a", 6) == 0) {
+        return "Indexado";
+    }
+    // BMP
+    else if (memcmp(header, "BM", 2) == 0) {
+        uint16_t bpp = (uint8_t)header[28] | ((uint8_t)header[29] << 8);
+        return "RGB (" + std::to_string(bpp) + "-bit)";
+    }
+    // WEBP
+    else if (memcmp(header, "RIFF", 4) == 0 && memcmp(header + 8, "WEBP", 4) == 0) {
+        return "RGB/RGBA (Compresión Lossy/Lossless)";
+    }
+
+    return "Desconocido";
 }
