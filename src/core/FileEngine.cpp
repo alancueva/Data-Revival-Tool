@@ -120,7 +120,7 @@ string FileEngine::processFile(const string &filePath)
         }
         else if (fileType == "Documento")
         {
-            lstdata << documentMetadata->getAllMetadata(filePath);
+            lstdata << documentMetadata->extractMetadata(filePath);
         }
         else if (fileType == "Audio")
         {
