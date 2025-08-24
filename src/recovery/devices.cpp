@@ -7,7 +7,7 @@
 #include <sstream>
 #include <iomanip>
 #include <winioctl.h>
-#include <map>
+
 
 /**
  * Función para formatear el tamaño en una cadena legible
