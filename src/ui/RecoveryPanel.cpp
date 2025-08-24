@@ -2,13 +2,14 @@
 #include "../../include/recovery/devices.h"
 #include <iostream>
 
-RecoveryPanel::RecoveryPanel() : 
-    panel(nullptr),
-    device_combo(nullptr),
-    quick_scan_check(nullptr),
-    deep_scan_check(nullptr),
-    progress_bar(nullptr),
-    tree_view(nullptr) {
+RecoveryPanel::RecoveryPanel() : panel(nullptr),
+                                 device_combo(nullptr),
+                                 quick_scan_check(nullptr),
+                                 deep_scan_check(nullptr),
+                                 progress_bar(nullptr),
+                                 tree_view(nullptr),
+                                 recover_button(nullptr)
+{
 
     panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_start(panel, 20);
@@ -19,7 +20,7 @@ RecoveryPanel::RecoveryPanel() :
     GtkWidget *title = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(title), "<span size='x-large' weight='bold'>Recuperación de Datos</span>");
     gtk_box_pack_start(GTK_BOX(panel), title, FALSE, FALSE, 10);
-    
+
     // Crear las secciones del panel
     create_device_selection_section();
     create_options_section();
@@ -27,40 +28,60 @@ RecoveryPanel::RecoveryPanel() :
     create_files_section();
 }
 
-RecoveryPanel::~RecoveryPanel() {
-    
+RecoveryPanel::~RecoveryPanel()
+{
 }
 
-void RecoveryPanel::create_device_selection_section() {
+void RecoveryPanel::create_device_selection_section()
+{
     // Grupo de selección de dispositivo
     GtkWidget *device_frame = gtk_frame_new("Seleccionar dispositivo");
     gtk_box_pack_start(GTK_BOX(panel), device_frame, FALSE, FALSE, 10);
-    
+
     GtkWidget *device_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(device_frame), device_box);
     gtk_widget_set_margin_start(device_box, 10);
     gtk_widget_set_margin_end(device_box, 10);
     gtk_widget_set_margin_top(device_box, 10);
     gtk_widget_set_margin_bottom(device_box, 10);
-    
-    device_combo = gtk_combo_box_text_new();
 
-    std::vector<std::string> disks = get_disks();
+    // Crear un modelo de datos para el ComboBox (Columna 0: Texto a mostrar, Columna 1: Ruta real)
+    GtkListStore *store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
-    for (const auto& disk : disks) {
-        gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(device_combo), disk.c_str());
+    std::vector<DiskInfo> disks = get_disks();
+    for (const auto &disk : disks)
+    {
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           0, disk.display_name.c_str(),
+                           1, disk.path.c_str(),
+                           -1);
     }
 
-    if (!disks.empty()) {
+    device_combo = gtk_combo_box_new_with_model(GTK_TREE_MODEL(store));
+    g_object_unref(store); // El ComboBox ahora es dueño del modelo
+
+    GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
+    gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(device_combo), renderer, TRUE);
+    gtk_cell_layout_set_attributes(GTK_CELL_LAYOUT(device_combo), renderer, "text", 0, NULL);
+
+    if (!disks.empty())
+    {
         gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), 0);
     }
     gtk_box_pack_start(GTK_BOX(device_box), device_combo, FALSE, FALSE, 0);
 }
 
-void RecoveryPanel::create_options_section() {
+/**
+ * Crea la sección de opciones de recuperación en el panel
+ *
+ */
+void RecoveryPanel::create_options_section()
+{
     GtkWidget *options_frame = gtk_frame_new("Opciones de recuperación");
     gtk_box_pack_start(GTK_BOX(panel), options_frame, FALSE, FALSE, 10);
-    
+
     GtkWidget *options_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(options_frame), options_box);
     gtk_widget_set_margin_start(options_box, 10);
@@ -69,24 +90,31 @@ void RecoveryPanel::create_options_section() {
     gtk_widget_set_margin_bottom(options_box, 10);
 
     quick_scan_check = gtk_check_button_new_with_label("Escaneo rápido");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(quick_scan_check), TRUE);
+    // gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(quick_scan_check), TRUE);
     gtk_box_pack_start(GTK_BOX(options_box), quick_scan_check, FALSE, FALSE, 0);
     g_signal_connect(quick_scan_check, "toggled", G_CALLBACK(on_scan_option_toggled), this);
-    
+
     deep_scan_check = gtk_check_button_new_with_label("Escaneo profundo");
     gtk_box_pack_start(GTK_BOX(options_box), deep_scan_check, FALSE, FALSE, 0);
     g_signal_connect(deep_scan_check, "toggled", G_CALLBACK(on_scan_option_toggled), this);
-    
-    GtkWidget *recover_button = gtk_button_new_with_label("Iniciar Recuperación");
+
+    recover_button = gtk_button_new_with_label("Iniciar Recuperación");
     gtk_widget_set_margin_top(recover_button, 10);
     gtk_box_pack_start(GTK_BOX(panel), recover_button, FALSE, FALSE, 0);
     g_signal_connect(recover_button, "clicked", G_CALLBACK(on_recover_button_clicked), this);
+
+    /**
+     * Inicialmente deshabilitado hasta que se seleccione una opción de escaneo
+     * habilitar el botón de recuperación.
+     */
+    gtk_widget_set_sensitive(recover_button, FALSE);
 }
 
-void RecoveryPanel::create_progress_section() {
+void RecoveryPanel::create_progress_section()
+{
     GtkWidget *progress_frame = gtk_frame_new("Progreso");
     gtk_box_pack_start(GTK_BOX(panel), progress_frame, FALSE, FALSE, 10);
-    
+
     GtkWidget *progress_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(progress_frame), progress_box);
     gtk_widget_set_margin_start(progress_box, 10);
@@ -100,86 +128,151 @@ void RecoveryPanel::create_progress_section() {
     gtk_box_pack_start(GTK_BOX(progress_box), progress_bar, FALSE, FALSE, 0);
 }
 
-void RecoveryPanel::create_files_section() {
+void RecoveryPanel::create_files_section()
+{
     // Lista de archivos encontrados
     GtkWidget *files_frame = gtk_frame_new("Archivos encontrados");
     gtk_box_pack_start(GTK_BOX(panel), files_frame, TRUE, TRUE, 10);
-    
+
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_container_add(GTK_CONTAINER(files_frame), scroll);
-    
+
     // Crear el tree view para mostrar archivos
     tree_view = gtk_tree_view_new();
     gtk_container_add(GTK_CONTAINER(scroll), tree_view);
-    
+
     // Crear las columnas del tree view
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
     GtkTreeViewColumn *column = gtk_tree_view_column_new_with_attributes("Nombre", renderer, "text", 0, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
-    
+
     column = gtk_tree_view_column_new_with_attributes("Tamaño", renderer, "text", 1, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
-    
+
     column = gtk_tree_view_column_new_with_attributes("Fecha", renderer, "text", 2, NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), column);
+
     
-    // Añadir datos de ejemplo
-    populate_sample_data();
 }
 
-//Simulación de datos de ejemplo
-// En una aplicación real, aquí se cargarían los datos reales de los archivos recuperados
-// y se añadirían al modelo del tree view.
-// En este caso, se añaden datos de ejemplo para mostrar cómo funcionaría la interfaz.
-void RecoveryPanel::populate_sample_data() {
-    // Crear un modelo para el tree view
+// Simulación de archivos recuperados: recorre todo el vector y los muestra en el tree view
+void RecoveryPanel::populate_sample_data()
+{
+    // Supongamos que estos son los archivos recuperados
+    std::vector<std::tuple<std::string, std::string, std::string>> recovered_files = {
+        {"documento.pdf", "1.2 MB", "01/05/2025"},
+        {"imagen.jpg", "850 KB", "28/04/2025"},
+        {"archivo.txt", "15 KB", "30/04/2025"}
+    };
+
     GtkListStore *store = gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+    for (const auto &file : recovered_files)
+    {
+        GtkTreeIter iter;
+        gtk_list_store_append(store, &iter);
+        gtk_list_store_set(store, &iter,
+                           0, std::get<0>(file).c_str(),
+                           1, std::get<1>(file).c_str(),
+                           2, std::get<2>(file).c_str(),
+                           -1);
+    }
+
     gtk_tree_view_set_model(GTK_TREE_VIEW(tree_view), GTK_TREE_MODEL(store));
-    
-    // Añadir algunos datos de ejemplo
-    GtkTreeIter iter;
-    gtk_list_store_append(store, &iter);
-    gtk_list_store_set(store, &iter, 0, "documento.pdf", 1, "1.2 MB", 2, "01/05/2025", -1);
-    
-    gtk_list_store_append(store, &iter);
-    gtk_list_store_set(store, &iter, 0, "imagen.jpg", 1, "850 KB", 2, "28/04/2025", -1);
-    
-    gtk_list_store_append(store, &iter);
-    gtk_list_store_set(store, &iter, 0, "archivo.txt", 1, "15 KB", 2, "30/04/2025", -1);
-    
-    // Liberar el modelo
     g_object_unref(store);
 }
 
-GtkWidget* RecoveryPanel::get_panel() {
+GtkWidget *RecoveryPanel::get_panel()
+{
     return panel;
 }
 
+void RecoveryPanel::on_recover_button_clicked(GtkWidget *widget, gpointer data)
+{
+    RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
 
-void RecoveryPanel::on_recover_button_clicked(GtkWidget *widget, gpointer data) {
-    RecoveryPanel *panel = static_cast<RecoveryPanel*>(data);
-    
-    // Obtener el dispositivo seleccionado
-    gchar *device = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(panel->device_combo));
-    
-    // Simular inicio de recuperación (en una aplicación real, aquí comenzaría el proceso)
-    std::cout << "Iniciando recuperación en " << device << std::endl;
-    
-    // Actualizar la barra de progreso (simulación)
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(panel->progress_bar), 0.25);
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(panel->progress_bar), "25%");
-    
-    g_free(device);
+    // Obtener la ruta real del dispositivo seleccionado desde el modelo del ComboBox
+    gchar *device_path = nullptr;
+    GtkTreeIter iter;
+    if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(panel->device_combo), &iter))
+    {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(panel->device_combo));
+        // Obtener el valor de la columna 1 (la ruta real)
+        gtk_tree_model_get(model, &iter, 1, &device_path, -1);
+    }
+
+    if (!device_path)
+    {
+        // No hay dispositivo seleccionado o algo salió mal
+        return;
+    }
+    std::cout << "Iniciando recuperación en: " << device_path << std::endl;
+
+    // Simulación de avance de la recuperación con una barra de progreso suave
+    struct ProgressData {
+        RecoveryPanel *panel;
+        double fraction;
+    };
+
+    /**
+     * Callback para actualizar la barra de progreso.
+     * Este callback se llama periódicamente para actualizar la barra de progreso
+     * durante la simulación de la recuperación de archivos.
+     */
+    auto progress_callback = [](gpointer user_data) -> gboolean {
+        ProgressData *data = static_cast<ProgressData *>(user_data);
+        if (data->fraction >= 1.0) {
+            gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(data->panel->progress_bar), 1.0);
+            gtk_progress_bar_set_text(GTK_PROGRESS_BAR(data->panel->progress_bar), "100 %");
+            gtk_widget_set_sensitive(data->panel->recover_button, TRUE);
+            gtk_widget_set_sensitive(data->panel->quick_scan_check, TRUE);
+            gtk_widget_set_sensitive(data->panel->deep_scan_check, TRUE);
+            // Mostrar los datos recuperados al finalizar
+            data->panel->populate_sample_data();
+            delete data;
+            return G_SOURCE_REMOVE;
+        }
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(data->panel->progress_bar), data->fraction);
+        int percent = static_cast<int>(data->fraction * 100);
+        std::string text = std::to_string(percent) + " %";
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(data->panel->progress_bar), text.c_str());
+        // Incrementa el progreso
+        data->fraction += 0.05;
+        return G_SOURCE_CONTINUE;
+    };
+
+    // Deshabilita controles mientras progresa
+    gtk_widget_set_sensitive(panel->recover_button, FALSE);
+    gtk_widget_set_sensitive(panel->quick_scan_check, FALSE);
+    gtk_widget_set_sensitive(panel->deep_scan_check, FALSE);
+
+    // Limpia los datos previos antes de iniciar la recuperación
+    gtk_tree_view_set_model(GTK_TREE_VIEW(panel->tree_view), NULL);
+
+    ProgressData *progress_data = new ProgressData{panel, 0.0};
+    g_timeout_add(100, progress_callback, progress_data);
+
+    g_free(device_path);
 }
 
-void RecoveryPanel::on_scan_option_toggled(GtkWidget *widget, gpointer data) {
-    RecoveryPanel *panel = static_cast<RecoveryPanel*>(data);
+void RecoveryPanel::on_scan_option_toggled(GtkWidget *widget, gpointer data)
+{
+    RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
 
-    if (widget == panel->quick_scan_check && 
-        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->quick_scan_check))) {
+    if (widget == panel->quick_scan_check &&
+        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->quick_scan_check)))
+    {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(panel->deep_scan_check), FALSE);
-    } else if (widget == panel->deep_scan_check && 
-               gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->deep_scan_check))) {
+        gtk_widget_set_sensitive(panel->recover_button, TRUE);
+    }
+    else if (widget == panel->deep_scan_check &&
+             gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->deep_scan_check)))
+    {
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(panel->quick_scan_check), FALSE);
+        gtk_widget_set_sensitive(panel->recover_button, TRUE);
+    }
+    else
+    {
+        gtk_widget_set_sensitive(panel->recover_button, FALSE);
     }
 }

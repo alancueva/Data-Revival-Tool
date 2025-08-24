@@ -11,7 +11,7 @@ private:
     GtkWidget *deep_scan_check;
     GtkWidget *progress_bar;
     GtkWidget *tree_view;
-    
+    GtkWidget *recover_button;
 
     void create_device_selection_section();
     void create_options_section();
