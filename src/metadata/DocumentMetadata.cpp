@@ -1,4 +1,5 @@
 #include "../../include/metadata/DocumentMetadata.h"
+#include "../../include/utils/SizeFormatter.h"
 #include <fstream>
 #include <sstream>
 #include <ctime>
@@ -20,7 +21,7 @@ std::string DocumentMetadata::extractMetadata(const std::filesystem::path &fileP
     oss << "Nombre del archivo: " << m_metadata["file_name"] << "\n";
     oss << "Extensión: " << m_metadata["file_extension"] << "\n";
     oss << "Ruta: " << m_filePath.string() << "\n";
-    oss << "Tamaño: " << formatFileSize(std::filesystem::file_size(m_filePath)) << "\n";
+    oss << "Tamaño: " << format_size(std::filesystem::file_size(m_filePath)) << "\n";
     oss << "Firma (Hex): " << m_metadata["signature"] << "\n";
     oss << "Tipo MIME: " << m_metadata["mime_type"] << "\n";
     oss << "Tipo de Documento: " << m_metadata["document_type"] << "\n\n";
@@ -117,20 +118,4 @@ void DocumentMetadata::detectDocumentType() {
     // Por defecto
     m_metadata["mime_type"] = "application/octet-stream";
     m_metadata["document_type"] = "Tipo de archivo desconocido";
-}
-
-//! NOTE: Esta función está duplicada en `src/recovery/devices.cpp`. Considera moverla a un archivo de utilidades compartido.
-std::string DocumentMetadata::formatFileSize(uint64_t bytes) const {
-    const char* units[] = { "Bytes", "KB", "MB", "GB", "TB", "PB" };
-    int unitIndex = 0;
-    double size = static_cast<double>(bytes);
-
-    while (size >= 1024.0 && unitIndex < 5) { // Permitir hasta PB para consistencia
-        size /= 1024.0;
-        ++unitIndex;
-    }
-
-    std::ostringstream out;
-    out << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
-    return out.str();
 }
