@@ -22,23 +22,28 @@ std::vector<std::string> get_disks_windows()
     
     DWORD mask = GetLogicalDrives();
 
-    for (char letter = 'A'; letter <= 'Z'; ++letter)
+    for (wchar_t letter = L'A'; letter <= L'Z'; ++letter)
     {
-        if (mask & (1 << (letter - 'A')))
+        if (mask & (1 << (letter - L'A')))
         {
-            std::string root_path = std::string(1, letter) + ":\\";
-            UINT type = GetDriveTypeA(root_path.c_str());
+            std::wstring root_path_w = std::wstring(1, letter) + L":\\";
+            UINT type = GetDriveTypeW(root_path_w.c_str());
+
+            // Se crea una versión en string normal para la salida, ya que la función devuelve vector<string>
+            // Esto es seguro porque 'letter' siempre será A-Z.
+            std::string root_path_s(1, static_cast<char>(letter));
+            root_path_s += ":\\";
 
             /**
              * Filtramos las unidades que no son relevantes
              * como unidades de red, CD-ROM o unidades de disco extraíbles
              * DRIVE_FIXED → unidades fijas (discos duros)
-             * DRIVE_REMOVABLE → unidades extraíbles (pendrives, tarjetas SD, etc
+             * DRIVE_REMOVABLE → unidades extraíbles (pendrives, tarjetas SD, etc)
              */
             if (type == DRIVE_FIXED || type == DRIVE_REMOVABLE)
             {
                 ULARGE_INTEGER freeBytesAvailable, totalBytes, totalFreeBytes;
-                if (GetDiskFreeSpaceExA(root_path.c_str(), &freeBytesAvailable, &totalBytes, &totalFreeBytes))
+                if (GetDiskFreeSpaceExW(root_path_w.c_str(), &freeBytesAvailable, &totalBytes, &totalFreeBytes))
                 {
                     /**
                      * Formateamos el tamaño total de la unidad
@@ -48,12 +53,12 @@ std::vector<std::string> get_disks_windows()
                      * Si no se puede obtener el tamaño, añadimos un mensaje de "Tamaño desconocido"
                      */
                     std::ostringstream label;
-                    label << root_path << " (" << format_size(totalBytes.QuadPart) << ")";
+                    label << root_path_s << " (" << format_size(totalBytes.QuadPart) << ")";
                     drives.push_back(label.str());
                 }
                 else
                 {
-                    drives.push_back(root_path + " (Tamaño desconocido)");
+                    drives.push_back(root_path_s + " (Tamaño desconocido)");
                 }
             }
             else if (type == DRIVE_NO_ROOT_DIR)
@@ -63,7 +68,7 @@ std::vector<std::string> get_disks_windows()
                 * de la unidad, como unidades de red desconectadas o unidades no montadas.
                 * En este caso, simplemente añadimos la unidad con un mensaje de acceso denegado
                 */
-                drives.push_back(root_path + " (Acceso denegado)");
+                drives.push_back(root_path_s + " (Acceso denegado)");
             }
         }
     }
