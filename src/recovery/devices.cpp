@@ -16,10 +16,10 @@
  * unidades de disco extraíbles que no son relevantes.
  * @return Vector de cadenas con las unidades de disco encontradas
  */
-std::vector<std::string> get_disks_windows()
+std::vector<DiskInfo> get_disks_windows()
 {
-    std::vector<std::string> drives;
-    
+    std::vector<DiskInfo> drives;
+
     DWORD mask = GetLogicalDrives();
 
     for (wchar_t letter = L'A'; letter <= L'Z'; ++letter)
@@ -31,8 +31,8 @@ std::vector<std::string> get_disks_windows()
 
             // Se crea una versión en string normal para la salida, ya que la función devuelve vector<string>
             // Esto es seguro porque 'letter' siempre será A-Z.
-            std::string root_path_s(1, static_cast<char>(letter));
-            root_path_s += ":\\";
+            std::string drive_letter_path = std::string(1, static_cast<char>(letter)) + ":\\";
+            std::string raw_path = "\\\\.\\" + std::string(1, static_cast<char>(letter)) + ":";
 
             /**
              * Filtramos las unidades que no son relevantes
@@ -52,13 +52,13 @@ std::vector<std::string> get_disks_windows()
                      * Ejemplo: "C:\ (500.00 GB)"
                      * Si no se puede obtener el tamaño, añadimos un mensaje de "Tamaño desconocido"
                      */
-                    std::ostringstream label;
-                    label << root_path_s << " (" << format_size(totalBytes.QuadPart) << ")";
-                    drives.push_back(label.str());
+                    std::ostringstream display_name;
+                    display_name << drive_letter_path << " (" << format_size(totalBytes.QuadPart) << ")";
+                    drives.push_back({raw_path, display_name.str()});
                 }
                 else
                 {
-                    drives.push_back(root_path_s + " (Tamaño desconocido)");
+                    drives.push_back({raw_path, drive_letter_path + " (Tamaño desconocido)"});
                 }
             }
             else if (type == DRIVE_NO_ROOT_DIR)
@@ -68,7 +68,7 @@ std::vector<std::string> get_disks_windows()
                 * de la unidad, como unidades de red desconectadas o unidades no montadas.
                 * En este caso, simplemente añadimos la unidad con un mensaje de acceso denegado
                 */
-                drives.push_back(root_path_s + " (Acceso denegado)");
+                drives.push_back({raw_path, drive_letter_path + " (Acceso denegado)"});
             }
         }
     }
@@ -90,9 +90,9 @@ std::vector<std::string> get_disks_windows()
  * Filtra dispositivos que no son relevantes, como dispositivos de bucle, zram o aquellos con tamaño menor a 10 MB
  * @return Vector de cadenas con las unidades de disco encontradas
  */
-std::vector<std::string> get_disks_linux()
+std::vector<DiskInfo> get_disks_linux()
 {
-    std::vector<std::string> result;
+    std::vector<DiskInfo> result;
     FILE *fp = popen("lsblk -b -o NAME,SIZE,FSTYPE --noheadings", "r");
     if (!fp)
         return result;
@@ -123,15 +123,17 @@ std::vector<std::string> get_disks_linux()
         if (name.find("loop") == 0 || name.find("zram") == 0 || size_gb < 0.01)
             continue;
 
-        std::ostringstream entry;
-        entry << "/dev/" << name << " (" << format_size(size_bytes) << ")";
+        std::string raw_path = "/dev/" + name;
+
+        std::ostringstream display_name;
+        display_name << raw_path << " (" << format_size(size_bytes) << ")";
 
         if (!fstype.empty())
         {
-            entry << " [" << fstype << "]";
+            display_name << " [" << fstype << "]";
         }
 
-        result.push_back(entry.str());
+        result.push_back({raw_path, display_name.str()});
     }
 
     pclose(fp);
@@ -140,7 +142,7 @@ std::vector<std::string> get_disks_linux()
 
 #endif
 
-std::vector<std::string> get_disks()
+std::vector<DiskInfo> get_disks()
 {
 #ifdef _WIN32
     return get_disks_windows();

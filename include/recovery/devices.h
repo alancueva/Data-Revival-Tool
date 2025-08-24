@@ -4,7 +4,17 @@
 #include <string>
 #include <vector>
 
+/**
+ * Información sobre un disco
+ */
+struct DiskInfo
+{
+    // Ruta real del dispositivo (ej: \\.\C: o /dev/sda)
+    std::string path;    
+    // Texto para mostrar en la UI (ej: C:\ (500 GB))       
+    std::string display_name;   
+};
 
-std::vector<std::string> get_disks();
+std::vector<DiskInfo> get_disks();
 
 #endif
