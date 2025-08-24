@@ -99,6 +99,8 @@ void MetadataRecoveryGUI::crear()
 
 void MetadataRecoveryGUI::create_header_buttons()
 {
+    // Obtener el directorio de recursos una sola vez
+    gchar *dir = g_get_current_dir();
 
     // Botones de la barra de menú
     const char *button_labels[] = {"Metadatos", "Recuperación"};
@@ -107,66 +109,56 @@ void MetadataRecoveryGUI::create_header_buttons()
     const char *button_icons[] = {
         "data-recovery-30.png",
         "recuperación-de-datos-30.png"};
+    const char *fallback_icons[] = {"document-properties", "drive-harddisk"};
 
     // tamaño de los iconos
-    // Se puede cambiar el tamaño de los iconos según sea necesario
     const int icon_width = 20;
     const int icon_height = 20;
 
     for (int i = 0; i < 2; i++)
     {
-        m_button_header = gtk_button_new_with_label(button_labels[i]);
-        gtk_button_set_relief(GTK_BUTTON(m_button_header), GTK_RELIEF_NONE);
-        gtk_widget_set_tooltip_text(m_button_header, button_tips[i]);
+        // Usar una variable local para el botón, no una variable miembro
+        GtkWidget *button = gtk_button_new_with_label(button_labels[i]);
+        gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(button, button_tips[i]);
 
-        gchar *dir = g_get_current_dir();
+        GtkWidget *icon = nullptr;
         gchar *icon_path = g_build_filename(dir, "resources", "icon", button_icons[i], NULL);
         GError *error = NULL;
         GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file_at_scale(icon_path, icon_width, icon_height, TRUE, &error);
-        GtkWidget *icon = gtk_image_new_from_pixbuf(pixbuf);
 
         if (error)
         {
             g_warning("No se pudo cargar el icono %s: %s", icon_path, error->message);
             g_error_free(error);
-            // Usar un icono por defecto de GTK
-            if (i == 0)
-            {
-                GtkWidget *icon = gtk_image_new_from_icon_name("document-properties", GTK_ICON_SIZE_BUTTON);
-                gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
-            }
-            else
-            {
-                GtkWidget *icon = gtk_image_new_from_icon_name("drive-harddisk", GTK_ICON_SIZE_BUTTON);
-                gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
-            }
+            // Usar un icono de respaldo de GTK
+            icon = gtk_image_new_from_icon_name(fallback_icons[i], GTK_ICON_SIZE_BUTTON);
         }
         else
         {
-            GtkWidget *icon = gtk_image_new_from_pixbuf(pixbuf);
-            gtk_button_set_image(GTK_BUTTON(m_button_header), icon);
+            icon = gtk_image_new_from_pixbuf(pixbuf);
+            // El GtkImage ahora tiene una referencia al pixbuf, podemos liberar la nuestra.
             g_object_unref(pixbuf);
         }
 
-        gtk_button_set_image_position(GTK_BUTTON(m_button_header), GTK_POS_LEFT);
-        gtk_button_set_always_show_image(GTK_BUTTON(m_button_header), TRUE);
-        gtk_button_set_use_underline(GTK_BUTTON(m_button_header), TRUE);
-        gtk_header_bar_pack_start(GTK_HEADER_BAR(m_header_bar), m_button_header);
+        gtk_button_set_image(GTK_BUTTON(button), icon);
+        gtk_button_set_image_position(GTK_BUTTON(button), GTK_POS_LEFT);
+        gtk_button_set_always_show_image(GTK_BUTTON(button), TRUE);
+        gtk_button_set_use_underline(GTK_BUTTON(button), TRUE);
+        gtk_header_bar_pack_start(GTK_HEADER_BAR(m_header_bar), button);
 
         if (i == 0)
         {
-            g_signal_connect(m_button_header, "clicked", G_CALLBACK(on_metadata_button_clicked), this);
+            g_signal_connect(button, "clicked", G_CALLBACK(on_metadata_button_clicked), this);
         }
         else
         {
-            g_signal_connect(m_button_header, "clicked", G_CALLBACK(on_recovery_button_clicked), this);
+            g_signal_connect(button, "clicked", G_CALLBACK(on_recovery_button_clicked), this);
         }
 
-        if (pixbuf)
-            g_object_unref(pixbuf);
         g_free(icon_path);
-        g_free(dir);
     }
+    g_free(dir);
 }
 
 /**
