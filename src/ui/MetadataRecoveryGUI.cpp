@@ -80,7 +80,6 @@ void MetadataRecoveryGUI::crear()
 
     m_header_bar = gtk_header_bar_new();
     gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(m_header_bar), TRUE);
-    gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Herramienta");
     gtk_window_set_titlebar(GTK_WINDOW(window), m_header_bar);
 
     create_header_buttons();
@@ -93,8 +92,8 @@ void MetadataRecoveryGUI::crear()
     gtk_stack_add_named(GTK_STACK(main_container), metadata_panel->get_panel(), "metadata");
     gtk_stack_add_named(GTK_STACK(main_container), recovery_panel->get_panel(), "recovery");
 
-    // Mostrar panel inicial
-    gtk_stack_set_visible_child_name(GTK_STACK(main_container), "metadata");
+    // Mostrar panel inicial y establecer título
+    switch_to_panel("metadata");
 }
 
 void MetadataRecoveryGUI::create_header_buttons()
@@ -191,4 +190,13 @@ void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget *widget, gpointer
 void MetadataRecoveryGUI::switch_to_panel(const char* panel_name)
 {
     gtk_stack_set_visible_child_name(GTK_STACK(main_container), panel_name);
+
+    if (g_strcmp0(panel_name, "metadata") == 0)
+    {
+        gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Metadatos");
+    }
+    else if (g_strcmp0(panel_name, "recovery") == 0)
+    {
+        gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Recuperación");
+    }
 }
