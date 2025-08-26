@@ -12,12 +12,27 @@ private:
     GtkWidget *progress_bar;
     GtkWidget *tree_view;
     GtkWidget *recover_button;
+    GtkWidget *scan_combo;
 
     void create_device_selection_section();
-    void create_options_section();
+    // void create_options_section();
+    void create_recovery_section();
     void create_progress_section();
     void create_files_section();
     void populate_sample_data();
+
+    /**
+     * Definición de columnas para el modelo de datos del TreeView
+    */
+    enum
+    {
+        COLUMN_CHECK,
+        COLUMN_NAME,
+        COLUMN_SIZE,
+        COLUMN_DATE,
+        NUM_COLUMNS
+    };
+
 
 public:
     RecoveryPanel();
@@ -26,7 +41,10 @@ public:
     GtkWidget* get_panel();
 
     static void on_recover_button_clicked(GtkWidget *widget, gpointer data);
-    static void on_scan_option_toggled(GtkWidget *widget, gpointer data);
+    // static void on_scan_option_toggled(GtkWidget *widget, gpointer data);
+    static void on_toggle_checkbox(GtkCellRendererToggle *cell,
+                                    gchar *path_str,
+                                    gpointer user_data);
 };
 
 #endif
