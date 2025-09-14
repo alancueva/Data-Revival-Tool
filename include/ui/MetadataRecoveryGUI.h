@@ -1,11 +1,10 @@
 
-#ifndef metadata_recovery_gui_h
-#define metadata_recovery_gui_h
+#ifndef METADATA_RECOVERY_GUI_H
+#define METADATA_RECOVERY_GUI_H
 
 #include <gtk/gtk.h>
 #include <string>
 #include <memory>
-using namespace std;
 
 class MetadataRecoveryEngine;
 class MetadataPanel;
@@ -20,9 +19,9 @@ private:
     GtkWidget *m_button_header;
     GtkWidget *current_panel;
 
-    unique_ptr<MetadataRecoveryEngine> engine;
-    unique_ptr<MetadataPanel> metadata_panel;
-    unique_ptr<RecoveryPanel> recovery_panel;
+    std::unique_ptr<MetadataRecoveryEngine> engine;
+    std::unique_ptr<MetadataPanel> metadata_panel;
+    std::unique_ptr<RecoveryPanel> recovery_panel;
 
     /**
      * @brief Crea e inicializa la interfaz gráfica
