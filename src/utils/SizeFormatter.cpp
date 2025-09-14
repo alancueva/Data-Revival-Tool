@@ -1,7 +1,7 @@
 #include "../../include/utils/SizeFormatter.h"
-#include <windows.h>
 #include <string>
 #include <iomanip>
+#include <sstream>
 
 /**
  * Función para formatear el tamaño en una cadena legible
@@ -11,8 +11,10 @@
  * @param bytes Tamaño en bytes
  * @return Cadena formateada con el tamaño y la unidad
  */
-std::string format_size(ULONGLONG bytes)
+std::string format_size(uint64_t bytes)
 {
+    if (bytes == 0) return "0 Bytes";
+
     const char* units[] = { "Bytes", "KB", "MB", "GB", "TB", "PB" };
     int unitIndex = 0;
     double size = static_cast<double>(bytes);

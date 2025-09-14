@@ -1,9 +1,9 @@
 #ifndef SIZE_FORMATTER_H
 #define SIZE_FORMATTER_H
 
-#include <windows.h>
 #include <string>
+#include <cstdint>
 
-std::string format_size(ULONGLONG bytes);
+std::string format_size(uint64_t bytes);
 
 #endif
