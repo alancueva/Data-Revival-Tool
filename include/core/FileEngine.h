@@ -10,6 +10,7 @@
 #include "../metadata/ImageMetadata.h"
 #include "../metadata/DocumentMetadata.h"
 #include "../metadata/AudioMetadata.h"
+#include "../metadata/VideoMetadata.h"
 
 using namespace std;
 
@@ -26,6 +27,7 @@ private:
     unique_ptr<ImageMetadata> imageMetadata;
     unique_ptr<DocumentMetadata> documentMetadata;
     unique_ptr<AudioMetadata> audioMetadata;
+    unique_ptr<VideoMetadata> videoMetadata;
 
     string getFileType(const filesystem::path &filePath);
 

@@ -22,6 +22,7 @@ FileEngine::FileEngine()
     imageMetadata = make_unique<ImageMetadata>();
     documentMetadata = make_unique<DocumentMetadata>();
     audioMetadata = make_unique<AudioMetadata>();
+    videoMetadata = make_unique<VideoMetadata>();
 }
 
 FileEngine::~FileEngine() = default;
@@ -58,7 +59,10 @@ string FileEngine::getFile(const filesystem::path &filePath)
         return "Audio";
     }
     else if (ext == ".mp4" || ext == ".avi" || ext == ".mov" || ext == ".mkv" || ext == ".wmv" ||
-             ext == ".flv" || ext == ".webm")
+             ext == ".flv" || ext == ".webm" || ext == ".m4v" || ext == ".3gp" || ext == ".3g2" ||
+             ext == ".asf" || ext == ".f4v" || ext == ".m2v" || ext == ".mpg" || ext == ".mpeg" ||
+             ext == ".mpe" || ext == ".vob" || ext == ".ogv" || ext == ".rm" || ext == ".rmvb" ||
+             ext == ".ts" || ext == ".mts" || ext == ".m2ts" || ext == ".divx" || ext == ".xvid")
     {
         return "Video";
     }
@@ -128,7 +132,7 @@ string FileEngine::processFile(const string &filePath)
         }
         else if (fileType == "Video")
         {
-            lstdata << "Procesamiento de video no implementado." << endl;
+            lstdata << videoMetadata->extractAllMetadata(filePath);
         }
         else if (fileType == "Ejecutable")
         {
@@ -170,7 +174,12 @@ string FileEngine::processFile(const string &filePath)
     }
     else
     {
-        lstdata << "Error abrir archivo: " << filePath << endl;
+        lstdata << "Error al abrir archivo: " << filePath << endl;
+        lstdata << "Posibles causas:" << endl;
+        lstdata << "- El archivo no existe" << endl;
+        lstdata << "- Sin permisos de lectura" << endl;
+        lstdata << "- Archivo en uso por otra aplicación" << endl;
+        lstdata << "- Ruta con caracteres especiales" << endl;
     }
     return lstdata.str();
 }
