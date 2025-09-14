@@ -13,6 +13,7 @@ private:
     GtkWidget *tree_view;
     GtkWidget *recover_button;
     GtkWidget *scan_combo;
+    guint device_monitor_timer;
 
     void create_device_selection_section();
     // void create_options_section();
@@ -20,6 +21,9 @@ private:
     void create_progress_section();
     void create_files_section();
     void populate_sample_data();
+    void refresh_device_list();
+    void start_device_monitoring();
+    void stop_device_monitoring();
 
     /**
      * Definición de columnas para el modelo de datos del TreeView
@@ -41,6 +45,8 @@ public:
     GtkWidget* get_panel();
 
     static void on_recover_button_clicked(GtkWidget *widget, gpointer data);
+    static void on_recover_selected_clicked(GtkWidget *widget, gpointer data);
+    static gboolean on_device_monitor_timeout(gpointer user_data);
     // static void on_scan_option_toggled(GtkWidget *widget, gpointer data);
     static void on_toggle_checkbox(GtkCellRendererToggle *cell,
                                     gchar *path_str,

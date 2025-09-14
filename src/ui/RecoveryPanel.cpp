@@ -9,7 +9,8 @@ RecoveryPanel::RecoveryPanel() : panel(nullptr),
                                  progress_bar(nullptr),
                                  tree_view(nullptr),
                                  recover_button(nullptr),
-                                 scan_combo(nullptr)
+                                 scan_combo(nullptr),
+                                 device_monitor_timer(0)
 {
 
     panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -28,10 +29,14 @@ RecoveryPanel::RecoveryPanel() : panel(nullptr),
     create_progress_section();
     create_files_section();
     create_recovery_section();
+    
+    // Iniciar monitoreo automático de dispositivos
+    start_device_monitoring();
 }
 
 RecoveryPanel::~RecoveryPanel()
 {
+    stop_device_monitoring();
 }
 
 /**
@@ -111,42 +116,6 @@ void RecoveryPanel::create_device_selection_section()
     g_signal_connect(recover_button, "clicked", G_CALLBACK(on_recover_button_clicked), this);
 }
 
-/**
- * Crea la sección de opciones de recuperación en el panel
- *
- */
-// void RecoveryPanel::create_options_section()
-// {
-//     GtkWidget *options_frame = gtk_frame_new("Opciones de recuperación");
-//     gtk_box_pack_start(GTK_BOX(panel), options_frame, FALSE, FALSE, 10);
-
-//     GtkWidget *options_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-//     gtk_container_add(GTK_CONTAINER(options_frame), options_box);
-//     gtk_widget_set_margin_start(options_box, 10);
-//     gtk_widget_set_margin_end(options_box, 10);
-//     gtk_widget_set_margin_top(options_box, 10);
-//     gtk_widget_set_margin_bottom(options_box, 10);
-
-//     quick_scan_check = gtk_check_button_new_with_label("Escaneo rápido");
-//     // gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(quick_scan_check), TRUE);
-//     gtk_box_pack_start(GTK_BOX(options_box), quick_scan_check, FALSE, FALSE, 0);
-//     g_signal_connect(quick_scan_check, "toggled", G_CALLBACK(on_scan_option_toggled), this);
-
-//     deep_scan_check = gtk_check_button_new_with_label("Escaneo profundo");
-//     gtk_box_pack_start(GTK_BOX(options_box), deep_scan_check, FALSE, FALSE, 0);
-//     g_signal_connect(deep_scan_check, "toggled", G_CALLBACK(on_scan_option_toggled), this);
-
-//     recover_button = gtk_button_new_with_label("Iniciar Recuperación");
-//     gtk_widget_set_margin_top(recover_button, 10);
-//     gtk_box_pack_start(GTK_BOX(panel), recover_button, FALSE, FALSE, 0);
-//     g_signal_connect(recover_button, "clicked", G_CALLBACK(on_recover_button_clicked), this);
-
-//     /**
-//      * Inicialmente deshabilitado hasta que se seleccione una opción de escaneo
-//      * habilitar el botón de recuperación.
-//      */
-//     gtk_widget_set_sensitive(recover_button, FALSE);
-// }
 
 /**
  * Crea la sección de progreso en el panel
@@ -202,7 +171,7 @@ void RecoveryPanel::create_files_section()
         NULL);
     gtk_tree_view_append_column(GTK_TREE_VIEW(tree_view), toggle_column);
 
-    g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(on_toggle_checkbox), store);
+    g_signal_connect(toggle_renderer, "toggled", G_CALLBACK(on_toggle_checkbox), tree_view);
 
     // Crear las columnas del tree view
     GtkCellRenderer *renderer = gtk_cell_renderer_text_new();
@@ -349,35 +318,12 @@ void RecoveryPanel::create_recovery_section()
     gtk_box_pack_start(GTK_BOX(recovery_box), status_label, TRUE, FALSE, 0);
 
     GtkWidget *recover_selected_button = gtk_button_new_with_label("Recuperar");
-    gtk_widget_set_sensitive(recover_selected_button, FALSE);
+    gtk_widget_set_sensitive(recover_selected_button, TRUE);
     gtk_box_pack_start(GTK_BOX(recovery_box), recover_selected_button, FALSE, FALSE, 0);
-
     
-    // g_signal_connect(recover_selected_button, "clicked",
-    //                  G_CALLBACK(on_recover_selected_button_clicked), this);
+    g_signal_connect(recover_selected_button, "clicked", G_CALLBACK(on_recover_selected_clicked), this);
+
 }
-
-// void RecoveryPanel::on_scan_option_toggled(GtkWidget *widget, gpointer data)
-// {
-//     RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
-
-//     if (widget == panel->quick_scan_check &&
-//         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->quick_scan_check)))
-//     {
-//         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(panel->deep_scan_check), FALSE);
-//         gtk_widget_set_sensitive(panel->recover_button, TRUE);
-//     }
-//     else if (widget == panel->deep_scan_check &&
-//              gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(panel->deep_scan_check)))
-//     {
-//         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(panel->quick_scan_check), FALSE);
-//         gtk_widget_set_sensitive(panel->recover_button, TRUE);
-//     }
-//     else
-//     {
-//         gtk_widget_set_sensitive(panel->recover_button, FALSE);
-//     }
-// }
 
 /**
  * Callback para el cambio de estado del checkbox en la vista de archivos
@@ -388,19 +334,253 @@ void RecoveryPanel::on_toggle_checkbox(GtkCellRendererToggle *cell,
 {
     GtkTreeView *view = GTK_TREE_VIEW(user_data);
     GtkTreeModel *model = gtk_tree_view_get_model(view);
-    if (!model) return;
+    if (!model) {
+        std::cerr << "Error: No se pudo obtener el modelo del TreeView" << std::endl;
+        return;
+    }
 
     GtkTreePath *path = gtk_tree_path_new_from_string(path_str);
-    if (!path) return;
+    if (!path) {
+        std::cerr << "Error: No se pudo crear el path desde string: " << path_str << std::endl;
+        return;
+    }
 
     GtkTreeIter iter;
     if (gtk_tree_model_get_iter(model, &iter, path)) {
-        gboolean active = FALSE;
-        gtk_tree_model_get(model, &iter, COLUMN_CHECK, &active, -1);
+        gboolean current_state = FALSE;
+        gtk_tree_model_get(model, &iter, COLUMN_CHECK, &current_state, -1);
 
-        if (GTK_IS_LIST_STORE(model))
-            gtk_list_store_set(GTK_LIST_STORE(model), &iter, COLUMN_CHECK, !active, -1);
+        // Cambiar el estado del checkbox
+        gboolean new_state = !current_state;
+        
+        if (GTK_IS_LIST_STORE(model)) {
+            gtk_list_store_set(GTK_LIST_STORE(model), &iter, COLUMN_CHECK, new_state, -1);
+            
+            // Obtener información del archivo para debug
+            gchar *filename = nullptr;
+            gtk_tree_model_get(model, &iter, COLUMN_NAME, &filename, -1);
+            /**
+             * Liberar la memoria asignada al filename
+             */
+            if (filename) g_free(filename);
+        } else {
+            std::cerr << "Error: El modelo no es un ListStore" << std::endl;
+        }
+    } else {
+        std::cerr << "Error: No se pudo obtener el iterador para el path: " << path_str << std::endl;
     }
 
     gtk_tree_path_free(path);
+}
+
+/**
+ * Actualiza la lista de dispositivos en el ComboBox
+ * Mantiene la selección actual si el dispositivo sigue disponible
+ * 
+ */
+void RecoveryPanel::refresh_device_list()
+{
+    if (!device_combo) {
+        std::cerr << "Error: device_combo es nulo" << std::endl;
+        return;
+    }
+
+    // Guardar la selección actual
+    gchar *current_device_path = nullptr;
+    GtkTreeIter iter;
+    if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(device_combo), &iter)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(device_combo));
+        if (model) {
+            gtk_tree_model_get(model, &iter, 1, &current_device_path, -1);
+        }
+    }
+
+    // Crear nuevo modelo con dispositivos actualizados
+    GtkListStore *new_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
+    std::vector<DiskInfo> disks = get_disks();
+    
+    int new_selection_index = -1;
+    int index = 0;
+    
+    for (const auto &disk : disks) {
+        GtkTreeIter new_iter;
+        gtk_list_store_append(new_store, &new_iter);
+        gtk_list_store_set(new_store, &new_iter,
+                           0, disk.display_name.c_str(),
+                           1, disk.path.c_str(),
+                           -1);
+        
+        // Verificar si este es el dispositivo previamente seleccionado
+        if (current_device_path && disk.path == std::string(current_device_path)) {
+            new_selection_index = index;
+        }
+        index++;
+    }
+
+    // Actualizar el modelo del ComboBox
+    gtk_combo_box_set_model(GTK_COMBO_BOX(device_combo), GTK_TREE_MODEL(new_store));
+    g_object_unref(new_store);
+
+    // Restaurar selección o seleccionar el primero
+    if (new_selection_index >= 0) {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), new_selection_index);
+    } else if (!disks.empty()) {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), 0);
+    }
+
+    if (current_device_path) g_free(current_device_path);
+}
+
+/**
+ * Inicia el monitoreo automático de dispositivos
+ * Revisa cada 3 segundos si hay cambios en los dispositivos
+ */
+void RecoveryPanel::start_device_monitoring()
+{
+    if (device_monitor_timer != 0) {
+        stop_device_monitoring();
+    }
+    
+    // Timer que se ejecuta cada 3000ms (3 segundos)
+    device_monitor_timer = g_timeout_add(3000, on_device_monitor_timeout, this);
+}
+
+/**
+ * Detiene el monitoreo automático de dispositivos
+ * Elimina el timer y lo establece en 0
+ */
+void RecoveryPanel::stop_device_monitoring()
+{
+    if (device_monitor_timer != 0) {
+        g_source_remove(device_monitor_timer);
+        device_monitor_timer = 0;
+    }
+}
+
+/**
+ * Callback del timer de monitoreo automático
+ * Se ejecuta periódicamente para verificar cambios en dispositivos
+ */
+gboolean RecoveryPanel::on_device_monitor_timeout(gpointer user_data)
+{
+    RecoveryPanel *panel = static_cast<RecoveryPanel *>(user_data);
+    if (!panel) {
+        std::cerr << "Error: Panel es nulo en monitor timeout" << std::endl;
+        return G_SOURCE_REMOVE; // Detener el timer
+    }
+
+    // Obtener dispositivos actuales
+    std::vector<DiskInfo> current_disks = get_disks();
+    
+    // Obtener dispositivos del ComboBox actual
+    std::vector<std::string> combo_devices;
+    if (panel->device_combo) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(panel->device_combo));
+        if (model) {
+            GtkTreeIter iter;
+            gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
+            
+            while (valid) {
+                gchar *device_path = nullptr;
+                gtk_tree_model_get(model, &iter, 1, &device_path, -1);
+                if (device_path) {
+                    combo_devices.push_back(std::string(device_path));
+                    g_free(device_path);
+                }
+                valid = gtk_tree_model_iter_next(model, &iter);
+            }
+        }
+    }
+    
+    // Verificar si hay cambios (diferentes cantidades o dispositivos diferentes)
+    bool devices_changed = false;
+    if (current_disks.size() != combo_devices.size()) {
+        devices_changed = true;
+    } else {
+        // Verificar si los dispositivos son los mismos
+        for (const auto& disk : current_disks) {
+            bool found = false;
+            for (const auto& combo_device : combo_devices) {
+                if (disk.path == combo_device) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                devices_changed = true;
+                break;
+            }
+        }
+    }
+    
+    // Si hay cambios, actualizar la lista
+    if (devices_changed) {
+        std::cout << "🔄 Cambios detectados en dispositivos - Actualizando automáticamente..." << std::endl;
+        panel->refresh_device_list();
+    }
+    
+    return G_SOURCE_CONTINUE; // Continuar el timer
+}
+
+/**
+ * Callback para el botón "Recuperar Seleccionados"
+ * Procesa solo los archivos que tienen el checkbox marcado
+ */
+void RecoveryPanel::on_recover_selected_clicked(GtkWidget *widget, gpointer data)
+{
+    // Validación de parámetros
+    if (!widget || !data) {
+        std::cerr << "Error: Parámetros inválidos en on_recover_selected_clicked" << std::endl;
+        return;
+    }
+
+    RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
+    if (!panel || !panel->tree_view) {
+        std::cerr << "Error: Panel o TreeView son nulos" << std::endl;
+        return;
+    }
+
+    // Obtener el modelo actual
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(panel->tree_view));
+    if (!model) {
+        std::cerr << "Error: No hay modelo en el TreeView" << std::endl;
+        return;
+    }
+
+    // Contar archivos seleccionados
+    std::vector<std::string> selected_files;
+    GtkTreeIter iter;
+    gboolean valid = gtk_tree_model_get_iter_first(model, &iter);
+
+    while (valid) {
+        gboolean checked = FALSE;
+        gchar *filename = nullptr;
+        
+        gtk_tree_model_get(model, &iter, 
+                          COLUMN_CHECK, &checked,
+                          COLUMN_NAME, &filename,
+                          -1);
+
+        if (checked && filename) {
+            selected_files.push_back(std::string(filename));
+            std::cout << "Archivo seleccionado para recuperar: " << filename << std::endl;
+        }
+
+        if (filename) g_free(filename);
+        valid = gtk_tree_model_iter_next(model, &iter);
+    }
+
+    if (selected_files.empty()) {
+        std::cout << "No hay archivos seleccionados para recuperar" << std::endl;
+        return;
+    }
+
+    std::cout << "Iniciando recuperación de " << selected_files.size() << " archivo(s) seleccionado(s)" << std::endl;
+    
+    // Por ahora, solo simulamos el proceso
+    for (const auto& file : selected_files) {
+        std::cout << "Recuperando: " << file << "... ✓" << std::endl;
+    }
+    
+    std::cout << "Recuperación completada exitosamente!" << std::endl;
 }
