@@ -44,6 +44,11 @@ private:
      */
     void switch_to_panel(const char* panel_name);
 
+    /**
+     * @brief Muestra el dialogo de acerca de 
+     */
+    void show_about_dialog();
+
 public:
     /**
      * @brief Constructor de la clase MetadataRecoveryGUI.
@@ -73,6 +78,13 @@ public:
      * @param data Puntero a la instancia de MetadataRecoveryGUI
      */
     static void on_recovery_button_clicked(GtkWidget* widget, gpointer data);
+
+    /**
+     * @brief Callback para el botón de acerca de
+     * @param widget Widget que generó la señal
+     * @param data Puntero a la instancia de MetadataRecoveryGUI
+     */
+    static void on_about_button_clicked(GtkWidget* widget, gpointer data);
     
 };
 

@@ -132,13 +132,18 @@ void MetadataRecoveryGUI::create_header_buttons()
         void (*callback)(GtkWidget*, gpointer);
     };
     
-    static constexpr int ICON_SIZE = 20;
-    static constexpr size_t BUTTON_COUNT = 2;
-    
+    static constexpr int ICON_SIZE = 20;    // tamaño de los iconos
+
+    // Configuración de los botones
+    // El primer botón es el botón de acerca del software
+    // El segundo botón es el botón de metadatos
+    // El tercer botón es el botón de recuperación
+    static constexpr size_t BUTTON_COUNT = 3;   // cantidad de que objetos que tendra el array
     const std::array<ButtonConfig, BUTTON_COUNT> buttons = {{
-        {"Metadata", "Extract metadata from files", "data-recovery-30.png", 
+        {"","Acerca del software","información.png","document-properties",on_about_button_clicked},
+        {"Metadata", "Extraccion de Metadata de Archivos", "data-recovery-30.png", 
          "document-properties", on_metadata_button_clicked},
-        {"Recovery", "Recover metadata from deleted files", "recuperación-de-datos-30.png", 
+        {"Recovery", "Recuperación de Archivos Borrados o Eliminados", "recuperación-de-datos-30.png", 
          "drive-harddisk", on_recovery_button_clicked}
     }};
 
@@ -156,7 +161,7 @@ void MetadataRecoveryGUI::create_header_buttons()
     for (const auto& btn_config : buttons) {
         GtkWidget* button = gtk_button_new_with_label(btn_config.label);
         if (!button) {
-            std::cerr << "Warning: Failed to create button: " << btn_config.label << std::endl;
+            std::cerr << "Warning: fallo al crear el boton: " << btn_config.label << std::endl;
             continue;
         }
         
@@ -215,18 +220,54 @@ void MetadataRecoveryGUI::mostrar() noexcept
     }
 }
 
-void MetadataRecoveryGUI::on_metadata_button_clicked(GtkWidget* widget, gpointer data)
+void MetadataRecoveryGUI::show_about_dialog()
 {
-    if (auto* app = static_cast<MetadataRecoveryGUI*>(data)) {
-        app->switch_to_panel("metadata");
-    }
-}
+    // crear el dialog
+    GtkWidget* about_dialog = gtk_dialog_new_with_buttons(
+        "Acerca de Data Revival Tool",
+        GTK_WINDOW(window),
+        GTK_DIALOG_MODAL,
+        "_Cerrar",
+        GTK_RESPONSE_CLOSE,
+        nullptr
+    );
 
-void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget* widget, gpointer data)
-{
-    if (auto* app = static_cast<MetadataRecoveryGUI*>(data)) {
-        app->switch_to_panel("recovery");
-    }
+    // crear el content area
+    GtkWidget* content_area = gtk_dialog_get_content_area(GTK_DIALOG(about_dialog));
+    
+    // crea los labels para la informacion
+    GtkWidget* title_label = gtk_label_new(nullptr);
+    gtk_label_set_markup(GTK_LABEL(title_label), 
+        "<span size='large' weight='bold'>Data Revival Tool</span>");
+    
+    GtkWidget* description_label = gtk_label_new(
+        "Una herramienta potente para la extracción de metadatos y recuperación de archivos.\n"
+        "Esta aplicación ayuda a los usuarios a recuperar archivos eliminados y\n"
+        "extraer metadatos de varios formatos de archivo.");
+    
+    GtkWidget* version_label = gtk_label_new("Version: 1.0.0");
+    GtkWidget* author_label = gtk_label_new("Autor: Alan Cueva T.");
+    GtkWidget* license_label = gtk_label_new("Licencia: GNU General Public License v3.0");
+    GtkWidget* website_label = gtk_label_new(nullptr);
+    gtk_label_set_markup(GTK_LABEL(website_label), 
+        "Sitio web: <a href=\"https://github.com/AlanCueva/Data-Revival-Tool\">"
+        "https://github.com/AlanCueva/Data-Revival-Tool</a>");
+    gtk_label_set_use_markup(GTK_LABEL(website_label), TRUE);
+    g_signal_connect(website_label, "activate-link", G_CALLBACK(gtk_show_uri_on_window), nullptr);
+    
+    // agrega los widgets al dialogo
+    gtk_container_set_border_width(GTK_CONTAINER(content_area), 15);
+    gtk_container_add(GTK_CONTAINER(content_area), title_label);
+    gtk_container_add(GTK_CONTAINER(content_area), description_label);
+    gtk_container_add(GTK_CONTAINER(content_area), version_label);
+    gtk_container_add(GTK_CONTAINER(content_area), author_label);
+    gtk_container_add(GTK_CONTAINER(content_area), license_label);
+    gtk_container_add(GTK_CONTAINER(content_area), website_label);
+
+    // abre e inicia el dialogo
+    gtk_widget_show_all(about_dialog);
+    gtk_dialog_run(GTK_DIALOG(about_dialog));
+    gtk_widget_destroy(about_dialog);
 }
 
 /**
@@ -237,7 +278,7 @@ void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget* widget, gpointer
 void MetadataRecoveryGUI::switch_to_panel(const char* panel_name)
 {
     if (!panel_name || !main_container || !m_header_bar) {
-        std::cerr << "Error: Invalid parameters in switch_to_panel" << std::endl;
+        std::cerr << "Error: Invalida los parametros en switch_to_panel" << std::endl;
         return;
     }
     
@@ -249,6 +290,32 @@ void MetadataRecoveryGUI::switch_to_panel(const char* panel_name)
     } else if (g_strcmp0(panel_name, "recovery") == 0) {
         gtk_header_bar_set_title(GTK_HEADER_BAR(m_header_bar), "Recovery");
     } else {
-        std::cerr << "Warning: Unknown panel name: " << panel_name << std::endl;
+        std::cerr << "Warning: desconoce el nombre del panel: " << panel_name << std::endl;
+    }
+}
+
+/**
+ * @brief eventos para los botones de la barra de encabezado
+ */
+
+void MetadataRecoveryGUI::on_about_button_clicked(GtkWidget* widget, gpointer data)
+{
+    if (auto* app = static_cast<MetadataRecoveryGUI*>(data)) {
+        app->show_about_dialog();
+    }
+}
+
+
+void MetadataRecoveryGUI::on_metadata_button_clicked(GtkWidget* widget, gpointer data)
+{
+    if (auto* app = static_cast<MetadataRecoveryGUI*>(data)) {
+        app->switch_to_panel("metadata");
+    }
+}
+
+void MetadataRecoveryGUI::on_recovery_button_clicked(GtkWidget* widget, gpointer data)
+{
+    if (auto* app = static_cast<MetadataRecoveryGUI*>(data)) {
+        app->switch_to_panel("recovery");
     }
 }
