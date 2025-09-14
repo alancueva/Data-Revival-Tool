@@ -10,12 +10,38 @@
 #include <winioctl.h>
 
 
+void add_physical_drives(std::vector<DiskInfo>& drives) {
+    for (int i = 0; i < 16; i++) { // Intentar hasta 16 discos físicos
+        std::string physical_path = std::string("\\\\.\\PhysicalDrive") + std::to_string(i);
+        HANDLE hDevice = CreateFileA(physical_path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    NULL, OPEN_EXISTING, 0, NULL);
+        
+        if (hDevice != INVALID_HANDLE_VALUE) {
+            DISK_GEOMETRY_EX diskGeometry = {0};
+            DWORD bytesReturned = 0;
+            
+            if (DeviceIoControl(hDevice, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX,
+                               NULL, 0, &diskGeometry, sizeof(diskGeometry),
+                               &bytesReturned, NULL)) {
+                
+                ULONGLONG diskSize = diskGeometry.DiskSize.QuadPart;
+                std::ostringstream display_name;
+                display_name << "Disco Físico " << i << " (" << format_size(diskSize) << ")";
+                
+                drives.push_back({physical_path, display_name.str()});
+            }
+            CloseHandle(hDevice);
+        }
+    }
+}
+
 /**
  * Función para obtener las unidades de disco en Windows
  * Filtra unidades fijas y extraíbles, excluyendo unidades de red, CD-ROM y
  * unidades de disco extraíbles que no son relevantes.
  * @return Vector de cadenas con las unidades de disco encontradas
  */
+
 std::vector<DiskInfo> get_disks_windows()
 {
     std::vector<DiskInfo> drives;
@@ -73,6 +99,9 @@ std::vector<DiskInfo> get_disks_windows()
         }
     }
 
+    // Añadir discos físicos
+    add_physical_drives(drives);
+    
     return drives;
 }
 
