@@ -21,12 +21,14 @@ set(SOURCES
     src/metadata/ImageMetadata.cpp
     src/metadata/VideoMetadata.cpp
     src/recovery/devices.cpp
+    src/recovery/smart_info.cpp
     src/core/FileEngine.cpp
     src/core/MetadataRecoveryEngine.cpp
     src/ui/MetadataPanel.cpp 
     src/ui/RecoveryPanel.cpp
     src/ui/MetadataRecoveryGUI.cpp
     src/utils/SizeFormatter.cpp
+    src/utils/device_physical.cpp
 )
 
 
@@ -44,3 +46,5 @@ set_target_properties(metadata_recovery PROPERTIES
 # Opcional: Para ver información útil
 message(STATUS "GTK3_INCLUDE_DIRS: ${GTK3_INCLUDE_DIRS}")
 message(STATUS "GTK3_LIBRARIES: ${GTK3_LIBRARIES}")
+
+target_sources(metadata_recovery PRIVATE app.manifest)
