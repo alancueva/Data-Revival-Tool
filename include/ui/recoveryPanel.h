@@ -2,6 +2,7 @@
 #define RECOVERY_PANEL_H
 
 #include <gtk/gtk.h>
+#include <string>
 
 class RecoveryPanel {
 private:
@@ -13,6 +14,7 @@ private:
     GtkWidget *tree_view;
     GtkWidget *recover_button;
     GtkWidget *scan_combo;
+    GtkWidget *health_indicator;
     guint device_monitor_timer;
 
     void create_device_selection_section();
@@ -24,6 +26,9 @@ private:
     void refresh_device_list();
     void start_device_monitoring();
     void stop_device_monitoring();
+
+    void update_device_health(const std::string& device_path);
+    
 
     /**
      * Definición de columnas para el modelo de datos del TreeView
@@ -51,6 +56,10 @@ public:
     static void on_toggle_checkbox(GtkCellRendererToggle *cell,
                                     gchar *path_str,
                                     gpointer user_data);
+
+    static void on_device_combo_changed(GtkComboBox *combo, gpointer data);
+
+    //static void on_scan_partitions_clicked(GtkWidget *widget, gpointer data);
 };
 
 #endif

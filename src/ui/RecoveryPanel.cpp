@@ -1,5 +1,7 @@
 #include "../../include/ui/recoveryPanel.h"
 #include "../../include/recovery/devices.h"
+#include "../../include/recovery/smart_info.h"
+#include "../../include/utils/device_physical.h"
 #include <iostream>
 
 RecoveryPanel::RecoveryPanel() : panel(nullptr),
@@ -10,8 +12,23 @@ RecoveryPanel::RecoveryPanel() : panel(nullptr),
                                  tree_view(nullptr),
                                  recover_button(nullptr),
                                  scan_combo(nullptr),
+                                 health_indicator(nullptr),
                                  device_monitor_timer(0)
 {
+    // Configurar CSS para los indicadores de salud
+    GtkCssProvider *provider = gtk_css_provider_new();
+    const char *css = ""
+        ".health-good { background-color: #00FF00; }"
+        ".health-medium { background-color: #FFFF00; }"
+        ".health-bad { background-color: #FF0000; }";
+    
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    gtk_style_context_add_provider_for_screen(
+        gdk_screen_get_default(),
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
+    g_object_unref(provider);
 
     panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_start(panel, 20);
@@ -57,6 +74,9 @@ void RecoveryPanel::create_device_selection_section()
 
     GtkWidget *row_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
     gtk_box_pack_start(GTK_BOX(box), row_box, FALSE, FALSE, 0);
+    
+    GtkWidget *device_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_box_pack_start(GTK_BOX(box), device_box, FALSE, FALSE, 5);
 
     // Crear un modelo de datos para el ComboBox (Columna 0: Texto a mostrar, Columna 1: Ruta real)
     GtkListStore *store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
@@ -90,6 +110,9 @@ void RecoveryPanel::create_device_selection_section()
 
     gtk_box_pack_start(GTK_BOX(row_box), device_combo, TRUE, TRUE, 0);
 
+    // Añadir esta línea para conectar el callback
+    g_signal_connect(device_combo, "changed", G_CALLBACK(on_device_combo_changed), this);
+
     GtkListStore *scan_store = gtk_list_store_new(1, G_TYPE_STRING);
     GtkTreeIter iter;
 
@@ -114,6 +137,17 @@ void RecoveryPanel::create_device_selection_section()
     gtk_box_pack_start(GTK_BOX(row_box), recover_button, FALSE, FALSE, 0);
 
     g_signal_connect(recover_button, "clicked", G_CALLBACK(on_recover_button_clicked), this);
+    
+    // Añadir indicador de salud del disco
+    health_indicator = gtk_progress_bar_new();
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(health_indicator), "Estado de salud: Desconocido");
+    gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(health_indicator), TRUE);
+    gtk_box_pack_start(GTK_BOX(device_box), health_indicator, FALSE, FALSE, 5);
+    
+    // Botón para escanear particiones eliminadas
+    // GtkWidget *scan_partitions_button = gtk_button_new_with_label("Escanear particiones eliminadas");
+    // g_signal_connect(scan_partitions_button, "clicked", G_CALLBACK(on_scan_partitions_clicked), this);
+    // gtk_box_pack_start(GTK_BOX(device_box), scan_partitions_button, FALSE, FALSE, 5);
 }
 
 
@@ -398,7 +432,7 @@ void RecoveryPanel::refresh_device_list()
     // Crear nuevo modelo con dispositivos actualizados
     GtkListStore *new_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
     std::vector<DiskInfo> disks = get_disks();
-    
+
     int new_selection_index = -1;
     int index = 0;
     
@@ -426,6 +460,19 @@ void RecoveryPanel::refresh_device_list()
         gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), new_selection_index);
     } else if (!disks.empty()) {
         gtk_combo_box_set_active(GTK_COMBO_BOX(device_combo), 0);
+    }
+
+    // Añadir estas líneas para actualizar la información de salud
+    // después de seleccionar un dispositivo
+    gchar *selected_device_path = nullptr;
+    if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(device_combo), &iter)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(device_combo));
+        gtk_tree_model_get(model, &iter, 1, &selected_device_path, -1);
+        
+        if (selected_device_path) {
+            update_device_health(selected_device_path);
+            g_free(selected_device_path);
+        }
     }
 
     if (current_device_path) g_free(current_device_path);
@@ -583,4 +630,132 @@ void RecoveryPanel::on_recover_selected_clicked(GtkWidget *widget, gpointer data
     }
     
     std::cout << "Recuperación completada exitosamente!" << std::endl;
+}
+
+/**
+ * Callback para el botón de escanear particiones eliminadas
+ */
+// void RecoveryPanel::on_scan_partitions_clicked(GtkWidget *widget, gpointer data)
+// {
+//     RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
+//     if (!panel) {
+//         std::cerr << "Error: Panel es nulo en on_scan_partitions_clicked" << std::endl;
+//         return;
+//     }
+    
+//     // Obtener la ruta del dispositivo seleccionado
+//     gchar *device_path = nullptr;
+//     GtkTreeIter iter;
+//     if (gtk_combo_box_get_active_iter(GTK_COMBO_BOX(panel->device_combo), &iter)) {
+//         GtkTreeModel *model = gtk_combo_box_get_model(GTK_COMBO_BOX(panel->device_combo));
+//         gtk_tree_model_get(model, &iter, 1, &device_path, -1);
+//     }
+    
+//     if (!device_path) {
+//         std::cerr << "Error: No hay dispositivo seleccionado" << std::endl;
+//         return;
+//     }
+    
+//     std::cout << "Escaneando particiones eliminadas en: " << device_path << std::endl;
+//     // Aquí iría la lógica para escanear particiones eliminadas
+    
+//     g_free(device_path);
+// }
+
+/**
+ * Callback para cuando cambia la selección del dispositivo
+ */
+void RecoveryPanel::on_device_combo_changed(GtkComboBox *combo, gpointer data)
+{
+    RecoveryPanel *panel = static_cast<RecoveryPanel *>(data);
+    if (!panel) {
+        std::cerr << "Error: Panel es nulo en on_device_combo_changed" << std::endl;
+        return;
+    }
+    
+    // Obtener la ruta del dispositivo seleccionado
+    gchar *device_path = nullptr;
+    GtkTreeIter iter;
+    if (gtk_combo_box_get_active_iter(combo, &iter)) {
+        GtkTreeModel *model = gtk_combo_box_get_model(combo);
+        gtk_tree_model_get(model, &iter, 1, &device_path, -1);
+        
+        if (device_path) {
+            // Actualizar información de salud
+            panel->update_device_health(device_path);
+            g_free(device_path);
+        }
+    }
+}
+
+/**
+ * Actualiza la información de salud del dispositivo seleccionado
+ */
+void RecoveryPanel::update_device_health(const std::string& device_path)
+{
+     if (!health_indicator || !GTK_IS_PROGRESS_BAR(health_indicator)) {
+        std::cerr << "Error: health_indicator no está inicializado o no es un GtkProgressBar." << std::endl;
+        return;
+    }
+
+    if (!gtk_widget_get_realized(health_indicator)) {
+        std::cerr << "Error: health_indicator no está agregado a un contenedor GTK." << std::endl;
+        return;
+    }
+
+    GtkStyleContext *context = gtk_widget_get_style_context(health_indicator);
+    if (!context) {
+        std::cerr << "Error: No se pudo obtener el contexto de estilo." << std::endl;
+        return;
+    }
+
+    int health = -1, temp = -1;
+
+    /**
+     * Verifica si el dispositivo es físico antes de intentar obtener información SMART
+     * Esto evita errores al intentar leer información de dispositivos virtuales
+     */
+    if (!DevicePhysical::is_physical_disk(device_path)) {
+        gtk_style_context_remove_class(context, "health-good");
+        gtk_style_context_remove_class(context, "health-medium");
+        gtk_style_context_remove_class(context, "health-bad");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(health_indicator), "Estado de salud: No disponible");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(health_indicator), 0.0);
+        return;
+    }
+
+    if (get_smart_info(device_path, health, temp)) {
+        std::cout << "Salud obtenida: " << health << "%, Temperatura: " << temp << "°C" << std::endl;
+        std::string health_text = "Estado de salud: " + std::to_string(health) + "%";
+        if (temp > 0) {
+            health_text += " | Temperatura: " + std::to_string(temp) + "°C";
+        }
+        
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(health_indicator), health_text.c_str());
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(health_indicator), health / 100.0);
+
+        // Primero, eliminar clases anteriores si existen
+        gtk_style_context_remove_class(context, "health-good");
+        gtk_style_context_remove_class(context, "health-medium");
+        gtk_style_context_remove_class(context, "health-bad");
+        
+        // Añadir la clase apropiada según el estado de salud
+        if (health < 50) {
+            // Rojo para mala salud
+            gtk_style_context_add_class(context, "health-bad");
+        } else if (health < 80) {
+            // Amarillo para salud media
+            gtk_style_context_add_class(context, "health-medium");
+        } else {
+            // Verde para buena salud
+            gtk_style_context_add_class(context, "health-good");
+        }
+    } else {
+        gtk_style_context_remove_class(context, "health-good");
+        gtk_style_context_remove_class(context, "health-medium");
+        gtk_style_context_remove_class(context, "health-bad");
+        gtk_widget_set_name(health_indicator, "");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(health_indicator), "Estado de salud: No disponible");
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(health_indicator), 0.0);
+    }
 }
