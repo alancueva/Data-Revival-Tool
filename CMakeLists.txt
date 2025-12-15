@@ -27,6 +27,7 @@ set(SOURCES
     src/ui/MetadataPanel.cpp 
     src/ui/RecoveryPanel.cpp
     src/ui/MetadataRecoveryGUI.cpp
+    src/ui/HomePanel.cpp
     src/utils/SizeFormatter.cpp
     src/utils/device_physical.cpp
 )
