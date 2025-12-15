@@ -9,6 +9,7 @@
 class MetadataRecoveryEngine;
 class MetadataPanel;
 class RecoveryPanel;
+class HomePanel;
 
 class MetadataRecoveryGUI
 {
@@ -22,6 +23,7 @@ private:
     std::unique_ptr<MetadataRecoveryEngine> engine;
     std::unique_ptr<MetadataPanel> metadata_panel;
     std::unique_ptr<RecoveryPanel> recovery_panel;
+    std::unique_ptr<HomePanel> home_panel;
 
     /**
      * @brief Crea e inicializa la interfaz gráfica
@@ -64,6 +66,13 @@ public:
      * @brief Muestra la ventana principal
      */
     void mostrar() noexcept;
+
+    /**
+     * @brief Callback para el botón de Inicio
+     * @param widget Widget que generó la señal
+     * @param data Puntero a la instancia de MetadataRecoveryGUI
+     */
+    static void on_home_button_clicked(GtkWidget* widget, gpointer data);
 
     /**
      * @brief Callback para el botón de metadatos
