@@ -87,23 +87,23 @@ void MetadataPanel::create_file_selection_section()
 
     GtkWidget *analyze_button = gtk_button_new_with_label("Analizar Metadatos");
     GtkWidget *clear_button = gtk_button_new_with_label("Nuevo");
-    GtkWidget *delete_button = gtk_button_new_with_label("Eliminar Metadatos");
+    // GtkWidget *delete_button = gtk_button_new_with_label("Eliminar Metadatos");
 
     // Margen superior uniforme
     gtk_widget_set_margin_top(analyze_button, 10);
     gtk_widget_set_margin_top(clear_button, 10);
-    gtk_widget_set_margin_top(delete_button, 10);
+    // gtk_widget_set_margin_top(delete_button, 10);
 
     gtk_box_pack_start(GTK_BOX(button_box), analyze_button, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(button_box), clear_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(button_box), delete_button, FALSE, FALSE, 0);
+    // gtk_box_pack_start(GTK_BOX(button_box), delete_button, FALSE, FALSE, 0);
 
     // Agregar botón_box al panel principal
     gtk_box_pack_start(GTK_BOX(panel), button_box, FALSE, FALSE, 0);
 
     g_signal_connect(analyze_button, "clicked", G_CALLBACK(on_analyze_button_clicked), this);
 
-    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_metadata_button_clicked), this);
+    // g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_metadata_button_clicked), this);
 
     // Conectar señal para limpiar file_entry y text_view
     g_signal_connect_swapped(clear_button, "clicked", G_CALLBACK(+[](MetadataPanel *self)
@@ -124,18 +124,18 @@ void MetadataPanel::create_file_selection_section()
                                                        }),
                      analyze_button);
 
-    g_signal_connect(file_entry, "changed", G_CALLBACK(+[](GtkEditable *editable, gpointer user_data)
-                                                       {
-                                                           GtkWidget *button = GTK_WIDGET(user_data);
-                                                           const gchar *text = gtk_entry_get_text(GTK_ENTRY(editable));
-                                                           gtk_widget_set_sensitive(button, (text && *text));
-                                                       }),
-                     delete_button);
+    // g_signal_connect(file_entry, "changed", G_CALLBACK(+[](GtkEditable *editable, gpointer user_data)
+    //                                                    {
+    //                                                        GtkWidget *button = GTK_WIDGET(user_data);
+    //                                                        const gchar *text = gtk_entry_get_text(GTK_ENTRY(editable));
+    //                                                        gtk_widget_set_sensitive(button, (text && *text));
+    //                                                    }),
+    //                  delete_button);
 
     // Inicialmente deshabilitado si no hay texto
     const gchar *init_text = gtk_entry_get_text(GTK_ENTRY(file_entry));
     gtk_widget_set_sensitive(analyze_button, (init_text && *init_text));
-    gtk_widget_set_sensitive(delete_button, (init_text && *init_text));
+    // gtk_widget_set_sensitive(delete_button, (init_text && *init_text));
 }
 
 void MetadataPanel::create_results_section()
