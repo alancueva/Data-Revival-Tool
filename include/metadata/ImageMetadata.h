@@ -9,9 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-
-using namespace std;
-
 class ImageMetadata {
 public:
     ImageMetadata();
@@ -32,11 +29,11 @@ public:
         std::string srgbRendering;
     } imageData;
 
-    string filePath;
+    std::string filePath;
 
-    string setFilePath(const filesystem::path &filePath);
+    std::string setFilePath(const std::filesystem::path &filePath);
 
-    bool extract(const filesystem::path &filePath);
+    bool extract(const std::filesystem::path &filePath);
     // string getAllMetadata() const;
 
     /**
@@ -45,7 +42,7 @@ public:
      * @return string con los metadatos extraídos.
      * @note Este método utiliza la clase FileMetadata para extraer los metadatos de la imagen.
      */
-    string extractMetadataImg(const filesystem::path &filePath);
+    std::string extractMetadataImg(const std::filesystem::path &filePath);
 
     /**
      * Limpiar Metadata para JPEG
@@ -58,21 +55,23 @@ public:
     bool cleanPNGMetadata(const std::string& filepath, const std::string& tempFile);
 
 private:
-    ifstream fileStream;
+    std::ifstream fileStream;
 
-    string getDimensionImage() const;
-    string getFileType() const;
+    std::string getDimensionImage() const;
+    std::string getFileType() const;
 
-    string getPixelUnits() const;
+    std::string getPixelUnits() const;
     double getMegapixels() const; 
-    string getFileName() const;
-    string getFileTypeExtension() const;
+    std::string getFileName() const;
+    std::string getFileTypeExtension() const;
     uint8_t getBitDepth() const;
-    string getColorType() const;
+    std::string getColorType() const;
     int64_t getFileSize() const;
-    string getFormattedFileSize() const;
+    std::string getFormattedFileSize() const;
 
 
+    int readJPEGBitDepth(std::ifstream &file) const;
     
+    uint16_t readBigEndian16(std::ifstream& file) const;
 };
 #endif

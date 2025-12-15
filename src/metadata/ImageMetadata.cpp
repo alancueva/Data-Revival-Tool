@@ -27,6 +27,9 @@ ImageMetadata::ImageMetadata() {
 }
 
 ImageMetadata::~ImageMetadata() {
+    if (fileStream.is_open()) {
+        fileStream.close();
+    }
 }
 
 std::string ImageMetadata::setFilePath(const std::filesystem::path &filePath) {
@@ -47,7 +50,10 @@ std::string ImageMetadata::extractMetadataImg(const std::filesystem::path &fileP
              << "Tamaño del archivo: " << getFormattedFileSize() << "\n"
              << "Tipo de archivo: " << getFileType() << "\n"
              << "Extensión: " << getFileTypeExtension() << "\n"
-             << "Profundidad de bits: " << static_cast<int>(getBitDepth()) << "\n"
+             /**
+              * no leer aqui la profundidad de bits porque da error en algunos formatos
+              */
+            //  << "Profundidad de bits: " << static_cast<int>(getBitDepth()) << "\n"
              << "Tipo de color: " << getColorType() << "\n"
              << "Dimensiones de la Imagen: " << getDimensionImage() << "\n"
              << "Unidades de píxel: " << getPixelUnits() << "\n";
@@ -206,8 +212,18 @@ std::string ImageMetadata::getFileTypeExtension() const {
     return std::filesystem::path(filePath).extension().string();
 }
 
+/**
+ * @brief Obtener la profundidad de bits de la imagen.
+ * @return Profundidad de bits como entero.
+ * @note Soporta formatos PNG, JPG, BMP, GIF, WEBP. 
+ * 
+ * 
+ * VERIFICAR!! 
+ */
 uint8_t ImageMetadata::getBitDepth() const {
     std::ifstream file(filePath, std::ios::binary);
+    std::cout << "Profundidad de bits: " << static_cast<int>(readJPEGBitDepth(file)) << "\n";
+
     if (!file) {
         std::cerr << "No se pudo abrir: " << filePath << "\n";
         return -1;
@@ -271,6 +287,65 @@ uint8_t ImageMetadata::getBitDepth() const {
     return -3; // Formato no reconocido
     // return imageData.bitDepth;
 }
+
+// Leer profundidad de bits de JPEG
+int ImageMetadata::readJPEGBitDepth(std::ifstream& file) const {
+    if (!file.is_open()) {
+        return -1;
+    }
+
+    file.seekg(2); // Saltar FF D8
+    
+    while (!file.eof()) {
+        // Buscar marcador FF
+        uint8_t marker1 = file.get();
+        if (marker1 != 0xFF) continue;
+        
+        uint8_t marker2 = file.get();
+        
+        // SOF0 (Start of Frame) marcador C0
+        if (marker2 == 0xC0) {
+            // Saltar longitud del segmento (2 bytes)
+            file.seekg(2, std::ios::cur);
+            
+            // Leer precisión (profundidad de bits)
+            uint8_t precision = file.get();
+            return static_cast<int>(precision);
+        }
+        
+        // Si no es SOF0, saltar este segmento
+        if (marker2 >= 0xD0 && marker2 <= 0xD7) {
+            // Marcadores RSTn no tienen datos
+            continue;
+        }
+        
+        if (marker2 == 0xD9) {
+            // End of Image
+            break;
+        }
+        
+        // Leer longitud del segmento y saltar
+        uint16_t segmentLength = readBigEndian16(file);
+        if (segmentLength < 2) break;
+        
+        file.seekg(segmentLength - 2, std::ios::cur);
+    }
+    
+    std::cerr << "Error: No se encontró información de profundidad de bits en JPEG" << std::endl;
+    return -1;
+}
+
+
+// Método para leer 16 bits en formato big-endian
+uint16_t ImageMetadata::readBigEndian16(std::ifstream& file) const {
+    uint16_t value = 0;
+    for (int i = 0; i < 2; i++) {
+        value = (value << 8) | static_cast<uint8_t>(file.get());
+    }
+    return value;
+}
+
+
 
 std::string ImageMetadata::getColorType() const {
     std::ifstream file(filePath, std::ios::binary);
