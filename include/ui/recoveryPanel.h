@@ -4,7 +4,8 @@
 #include <gtk/gtk.h>
 #include <string>
 
-class RecoveryPanel {
+class RecoveryPanel
+{
 private:
     GtkWidget *panel;
     GtkWidget *device_combo;
@@ -27,12 +28,11 @@ private:
     void start_device_monitoring();
     void stop_device_monitoring();
 
-    void update_device_health(const std::string& device_path);
-    
+    // void update_device_health(const std::string& device_path);
 
     /**
      * Definición de columnas para el modelo de datos del TreeView
-    */
+     */
     enum
     {
         COLUMN_CHECK,
@@ -42,24 +42,23 @@ private:
         NUM_COLUMNS
     };
 
-
 public:
     RecoveryPanel();
     ~RecoveryPanel();
 
-    GtkWidget* get_panel();
+    GtkWidget *get_panel();
 
     static void on_recover_button_clicked(GtkWidget *widget, gpointer data);
     static void on_recover_selected_clicked(GtkWidget *widget, gpointer data);
     static gboolean on_device_monitor_timeout(gpointer user_data);
     // static void on_scan_option_toggled(GtkWidget *widget, gpointer data);
     static void on_toggle_checkbox(GtkCellRendererToggle *cell,
-                                    gchar *path_str,
-                                    gpointer user_data);
+                                   gchar *path_str,
+                                   gpointer user_data);
 
-    static void on_device_combo_changed(GtkComboBox *combo, gpointer data);
+    // static void on_device_combo_changed(GtkComboBox *combo, gpointer data);
 
-    //static void on_scan_partitions_clicked(GtkWidget *widget, gpointer data);
+    // static void on_scan_partitions_clicked(GtkWidget *widget, gpointer data);
 };
 
 #endif
